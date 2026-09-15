@@ -465,6 +465,7 @@ function switchTab(name, btn){
   document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
   $(tabMap[name]).classList.add('active'); btn.classList.add('active');
   if(name==='Chat') $('input').focus();
+  if(!userData.is_admin) $('headerActions').style.display=(name==='Chat')?'':'none';
   if(name==='Admin') loadAdminData();
   if(name==='Requests') loadRequests();
   if(name==='Dashboard') loadOverview();
