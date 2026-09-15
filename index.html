@@ -453,6 +453,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
+const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
+const api=p=>API+p;
+if(API){const _f=window.fetch.bind(window);window.fetch=(u,o={})=>{if(typeof u==='string'&&u.startsWith('/api/')){u=API+u;o=Object.assign({credentials:'include'},o);}return _f(u,o);};}
 const $ = id => document.getElementById(id);
 let chatHistory = [], userData = {}, editingUsername = null;
 const tabMap = {Chat:'tabChat',Admin:'tabAdmin',Dashboard:'tabDashboard',Settings:'tabSettings',Requests:'tabRequests',Docs:'tabDocs'};
@@ -974,7 +977,7 @@ function reqCard(r,admin){
   return `<div class="req-card">
     <div class="req-top"><span class="req-kind">${REQ_KIND[r.type]||r.type}${admin?' · '+esc(r.company):''}</span><span class="req-status ${r.status}">${REQ_LABEL[r.status]||r.status}</span></div>
     <div class="req-text">${esc(r.text)}</div>
-    ${(r.files&&r.files.length)?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${r.files.map(i=>`<img src="/api/requests/${r.id}/file/${i}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="openLightbox(this.src)">`).join('')}</div>`:''}
+    ${(r.files&&r.files.length)?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${r.files.map(i=>`<img src="${api(`/api/requests/${r.id}/file/${i}`)}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="openLightbox(this.src)">`).join('')}</div>`:''}
     ${(admin&&r.alex_note)?`<div class="req-svar" style="border-left-color:var(--orange)"><small style="color:var(--text2)">Din kommentar til agenten</small><br>${esc(r.alex_note)}</div>`:''}
     ${r.svar?`<div class="req-svar">${esc(r.svar)}</div>`:''}
     ${(!admin&&r.status==='faerdig'&&r.godkendt!==true)?`<div class="req-admin"><button onclick="feedbackRequest(${r.id},true)">Godkend</button><button style="background:var(--surface);color:var(--cyan);border:1px solid var(--cyan)" onclick="feedbackRequest(${r.id},false)">Ikke helt</button></div>`:''}
@@ -1098,14 +1101,14 @@ async function acceptForslag(text){
 function fmtBytes(b){return b>1e6?(b/1e6).toFixed(1)+' MB':Math.round(b/1e3)+' KB';}
 async function loadDocs(){
   try{const r=await fetch('/api/docs');if(!r.ok)return;const items=await r.json();
-    $('docList').innerHTML=items.length?items.map(d=>`<a class="ov-link" href="/api/docs/${encodeURIComponent(userData.username)}/file/${d.id}" target="_blank" rel="noopener">${esc(d.titel)}<br><small style="color:var(--text2);font-weight:400">${esc(d.navn)} · ${fmtBytes(d.bytes)} · ${fmtTs(d.ts)}</small></a>`).join(''):'<div class="req-empty">Ingen dokumenter endnu.</div>';
+    $('docList').innerHTML=items.length?items.map(d=>`<a class="ov-link" href="${api(`/api/docs/${encodeURIComponent(userData.username)}/file/${d.id}`)}" target="_blank" rel="noopener">${esc(d.titel)}<br><small style="color:var(--text2);font-weight:400">${esc(d.navn)} · ${fmtBytes(d.bytes)} · ${fmtTs(d.ts)}</small></a>`).join(''):'<div class="req-empty">Ingen dokumenter endnu.</div>';
   }catch(e){}
 }
 let docUser='';
 async function openDocs(username,company){docUser=username;$('docTitle').textContent='Dokumenter: '+company;$('docMsg').textContent='';$('docFileTitle').value='';$('docFile').value='';$('docModal').classList.add('open');loadAdminDocs();}
 async function loadAdminDocs(){
   const r=await fetch('/api/admin/docs/'+encodeURIComponent(docUser)); const items=r.ok?await r.json():[];
-  $('docAdminList').innerHTML=items.length?items.map(d=>`<div class="ov-item" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><a href="/api/docs/${encodeURIComponent(docUser)}/file/${d.id}" target="_blank" style="color:var(--cyan);font-weight:600;text-decoration:none">${esc(d.titel)}</a><span style="display:flex;gap:6px;align-items:center"><small>${fmtBytes(d.bytes)}</small><button class="btn-icon danger" onclick="deleteDoc('${d.id}')">🗑</button></span></div>`).join(''):'<div class="req-empty">Ingen filer endnu.</div>';
+  $('docAdminList').innerHTML=items.length?items.map(d=>`<div class="ov-item" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><a href="${api(`/api/docs/${encodeURIComponent(docUser)}/file/${d.id}`)}" target="_blank" style="color:var(--cyan);font-weight:600;text-decoration:none">${esc(d.titel)}</a><span style="display:flex;gap:6px;align-items:center"><small>${fmtBytes(d.bytes)}</small><button class="btn-icon danger" onclick="deleteDoc('${d.id}')">🗑</button></span></div>`).join(''):'<div class="req-empty">Ingen filer endnu.</div>';
 }
 function fileToB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
 async function uploadDoc(){
