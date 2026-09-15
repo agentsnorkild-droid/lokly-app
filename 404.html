@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lokly</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Lokly">
+<meta name="theme-color" content="#12564b">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f6f5f1;--surface:#ffffff;--surface2:#efede6;
+  --cyan:#12564b;--cyan-dim:#12564b14;--cyan-mid:#12564b40;
+  --purple:#12564b;--green:#1f7a5c;--red:#b4432f;--orange:#b86a1f;
+  --text:#1a2b2a;--text2:#5f6b69;
+  --radius:14px;--nav-h:64px;--border:#e4e0d6
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.login-screen{display:flex;align-items:center;justify-content:center;height:100dvh;padding:20px}
+.login-box{background:var(--surface);border-radius:20px;padding:48px 36px;width:100%;max-width:380px;text-align:center;border:1px solid var(--border)}
+.login-logo{font-size:36px;margin-bottom:12px}
+.login-box h1{font-size:28px;font-weight:700;margin-bottom:4px;color:var(--cyan)}
+.login-box p{color:var(--text2);font-size:14px;margin-bottom:32px}
+.login-box input{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;margin-bottom:12px;outline:none;transition:border .2s}
+.login-box input:focus{border-color:var(--cyan)}
+.login-box button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--cyan);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;transition:opacity .2s}
+.login-box button:hover{opacity:.9}
+.login-box button:disabled{opacity:.5;cursor:not-allowed}
+.login-error{color:var(--red);font-size:13px;margin-top:12px;min-height:20px}
+.app-screen{display:none;flex-direction:column;height:100dvh}
+.app-header{background:var(--surface);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h2{font-size:18px;font-weight:700;color:var(--cyan)}
+.company-badge{font-size:13px;color:var(--text2);background:var(--surface2);padding:4px 12px;border-radius:20px;border:1px solid var(--border)}
+.admin-badge{font-size:11px;font-weight:600;color:var(--cyan);background:var(--cyan-dim);padding:3px 8px;border-radius:6px;letter-spacing:.5px;text-transform:uppercase;border:1px solid var(--cyan-mid)}
+.header-actions{display:flex;gap:6px;align-items:center}
+.btn-header{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.btn-header:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-new-chat{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:15px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-new-chat:hover{border-color:var(--cyan);color:var(--cyan)}
+.search-bar{display:none;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);gap:8px;align-items:center}
+.search-bar.open{display:flex}
+.search-bar input{flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none}
+.search-bar input:focus{border-color:var(--cyan)}
+.search-bar button{width:30px;height:30px;border:none;background:none;color:var(--text2);font-size:16px;cursor:pointer}
+.msg.search-highlight{box-shadow:0 0 0 2px var(--cyan);opacity:1!important}
+.msg.search-dim{opacity:.3}
+.tab-content{flex:1;overflow:hidden;position:relative}
+.tab-pane{position:absolute;inset:0;display:none;flex-direction:column}
+.tab-pane.active{display:flex}
+.bottom-nav{background:var(--surface);border-top:1px solid var(--border);display:flex;flex-shrink:0;height:var(--nav-h);padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--text2);font-size:11px;cursor:pointer;transition:color .2s;-webkit-tap-highlight-color:transparent}
+.bottom-nav button.active{color:var(--cyan)}
+.bottom-nav button .nav-icon{font-size:22px;line-height:1}
+.bottom-nav button[hidden]{display:none}
+
+/* chat */
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}
+.msg{max-width:80%;padding:12px 16px;font-size:15px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;border-radius:var(--radius)}
+.msg.user{align-self:flex-end;background:var(--cyan);color:#fff;border-radius:var(--radius) var(--radius) 4px var(--radius)}
+.msg.agent{align-self:flex-start;background:var(--surface2);color:var(--text);border-radius:var(--radius) var(--radius) var(--radius) 4px}
+.msg.agent.streaming::after{content:'▋';animation:blink .7s step-end infinite;color:var(--cyan);font-size:12px;vertical-align:middle;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.day-divider{text-align:center;font-size:12px;color:var(--text2);padding:8px 0;position:relative}
+.day-divider::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--border)}
+.day-divider span{background:var(--bg);padding:0 10px;position:relative}
+.chat-input{background:var(--surface);padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0}
+.chat-input-row{display:flex;gap:8px;align-items:flex-end}
+.chat-input textarea{flex:1;padding:12px 16px;border-radius:20px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit;resize:none;outline:none;max-height:120px;min-height:44px;line-height:1.4;transition:border .2s}
+.chat-input textarea:focus{border-color:var(--cyan)}
+.btn-attach{width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:color .2s;font-size:20px}
+.btn-attach:hover{color:var(--cyan)}
+.btn-send{width:40px;height:40px;border-radius:50%;border:none;background:var(--cyan);color:#0a0e1a;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s}
+.btn-send:hover{opacity:.9}
+.btn-send:disabled{opacity:.4;cursor:not-allowed}
+.btn-send svg{width:18px;height:18px}
+.attach-preview{display:none;padding:8px 12px 4px;gap:8px;flex-wrap:wrap}
+.attach-preview.has-files{display:flex}
+.attach-thumb{position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface2)}
+.attach-thumb img,.attach-thumb video{width:100%;height:100%;object-fit:cover}
+.attach-thumb .remove{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:#00000099;color:#fff;border:none;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.attach-thumb .file-icon{display:flex;align-items:center;justify-content:center;height:100%;font-size:28px;color:var(--text2)}
+.msg img,.msg video{max-width:100%;border-radius:10px;margin-top:6px;cursor:pointer}
+.msg img{max-height:300px;object-fit:contain}
+.msg a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.msg.agent a{color:var(--cyan)}
+.msg code{background:#00000030;padding:2px 6px;border-radius:4px;font-size:13px;font-family:'SF Mono',monospace}
+.msg pre{background:#00000030;padding:10px 12px;border-radius:8px;margin-top:6px;overflow-x:auto;font-size:13px;font-family:'SF Mono',monospace;white-space:pre}
+.msg .time{font-size:11px;opacity:.5;margin-top:4px;display:block}
+.msg.user .time{text-align:right}
+/* typing */
+.typing-indicator{align-self:flex-start;background:var(--surface2);border-radius:var(--radius) var(--radius) var(--radius) 4px;padding:14px 18px;display:none;gap:5px;align-items:center}
+.typing-indicator.show{display:flex}
+.typing-indicator span{width:7px;height:7px;background:var(--text2);border-radius:50%;animation:typingBounce 1.2s infinite}
+.typing-indicator span:nth-child(2){animation-delay:.2s}
+.typing-indicator span:nth-child(3){animation-delay:.4s}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+/* fullscreen viewer */
+.lightbox{position:fixed;inset:0;background:#000000ee;z-index:200;display:none;align-items:center;justify-content:center;cursor:zoom-out}
+.lightbox.open{display:flex}
+.lightbox img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px}
+.lightbox .close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;border:none;background:#ffffff20;color:#fff;font-size:20px;cursor:pointer}
+/* animations */
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg{animation:msgIn .2s ease-out}
+
+/* settings */
+.settings-pane{overflow-y:auto;padding:20px}
+.settings-pane h3{font-size:16px;font-weight:600;margin-bottom:20px;color:var(--text2)}
+.setting-field{margin-bottom:20px}
+.setting-field label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.setting-field .value{background:var(--surface);padding:14px 16px;border-radius:12px;font-size:15px;color:var(--text);border:1px solid var(--border);min-height:46px;display:flex;align-items:center}
+.setting-field .value.empty{color:var(--text2);font-style:italic}
+.settings-logout{width:100%;padding:14px;border-radius:12px;border:1px solid #f8717140;background:transparent;color:var(--red);font-size:15px;font-weight:600;cursor:pointer;margin-top:20px;transition:all .2s}
+.settings-logout:hover{background:#f8717115}
+
+/* admin */
+.admin-pane{overflow-y:auto;padding:20px;flex-direction:column;gap:20px}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:18px 16px;border:1px solid var(--border);text-align:center}
+.stat-card .stat-num{font-size:32px;font-weight:700;color:var(--cyan);line-height:1;margin-bottom:6px}
+.stat-card .stat-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.admin-section-header{display:flex;align-items:center;justify-content:space-between}
+.admin-section-header h3{font-size:16px;font-weight:600}
+.btn-add{display:flex;align-items:center;gap:6px;padding:10px 16px;border-radius:10px;border:none;background:var(--cyan);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn-add:hover{opacity:.9}
+.customer-list{display:flex;flex-direction:column;gap:10px}
+.customer-card{background:var(--surface);border-radius:var(--radius);padding:16px;border:1px solid var(--border);display:flex;gap:14px;align-items:center}
+.customer-avatar{width:44px;height:44px;border-radius:12px;background:var(--cyan-dim);border:1px solid var(--cyan-mid);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--cyan);flex-shrink:0}
+.customer-info{flex:1;min-width:0}
+.customer-info .co{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.customer-info .meta{font-size:12px;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.customer-plan{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;letter-spacing:.3px;text-transform:uppercase;flex-shrink:0}
+.plan-basic{background:#3f3f4620;color:var(--text2);border:1px solid #ffffff15}
+.plan-pro{background:var(--cyan-dim);color:var(--cyan);border:1px solid var(--cyan-mid)}
+.plan-enterprise{background:#fb923c18;color:var(--orange);border:1px solid #fb923c40}
+.customer-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-icon{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s}
+.btn-icon:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-icon.danger:hover{border-color:var(--red);color:var(--red)}
+
+/* modals */
+.modal-overlay{position:fixed;inset:0;background:#00000088;z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:560px;max-height:90dvh;overflow-y:auto;padding:28px 24px 40px;transform:translateY(40px);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.modal-sub{font-size:14px;color:var(--text2);margin-bottom:24px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-field{margin-bottom:16px}
+.form-field label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.form-field input,.form-field select{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none;transition:border .2s;font-family:inherit}
+.form-field input:focus,.form-field select:focus{border-color:var(--cyan)}
+.form-field select option{background:var(--surface)}
+.form-field input:disabled{opacity:.5}
+.modal-actions{display:flex;gap:10px;margin-top:8px}
+.btn-primary{flex:1;padding:14px;border-radius:12px;border:none;background:var(--cyan);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn-primary:hover{opacity:.9}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{padding:14px 20px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:var(--text2);color:var(--text)}
+.pw-display{background:var(--bg);border:1px solid var(--cyan-mid);border-radius:12px;padding:20px;text-align:center;margin:20px 0}
+.pw-display .pw-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.pw-display .pw-val{font-size:22px;font-weight:700;font-family:monospace;color:var(--cyan);letter-spacing:2px;word-break:break-all}
+.pw-copy{margin-top:12px;padding:10px 20px;border-radius:10px;border:1px solid var(--cyan-mid);background:var(--cyan-dim);color:var(--cyan);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.pw-copy:hover{background:var(--cyan);color:#0a0e1a}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#ffffff15;border-radius:3px}
+@media(max-width:600px){.msg{max-width:90%}.login-box{padding:32px 24px}.stats-row{grid-template-columns:1fr 1fr}.form-row{grid-template-columns:1fr}}
+@media(max-width:380px){.stats-row{grid-template-columns:1fr}}
+
+/* Lokly-tilpasning */
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif}
+.brand h2,.login-box h1{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em}
+.login-logo{display:none}
+.bottom-nav button .nav-icon{display:none}
+.bottom-nav button{font-size:13px;font-weight:500}
+.bottom-nav button.active{font-weight:600}
+.req-pane{padding:20px;overflow-y:auto;gap:16px}
+.req-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:10px}
+.req-form h3{font-size:16px;font-weight:600}
+.req-form p{font-size:13px;color:var(--text2)}
+.ov-link{display:block;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--cyan);font-weight:600;text-decoration:none}
+.ov-item{padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;line-height:1.45}
+.ov-item:last-child{border-bottom:none}
+.ov-item small{color:var(--text2)}
+.push-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.push-box p{font-size:13px;color:var(--text2);margin:6px 0 10px}
+.req-form textarea{width:100%;min-height:90px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit;resize:vertical;outline:none}
+.req-form textarea:focus{border-color:var(--cyan)}
+.req-actions{display:flex;gap:8px;flex-wrap:wrap}
+.req-actions button{flex:1;padding:12px;border-radius:10px;border:1px solid var(--cyan);font-size:14px;font-weight:600;cursor:pointer}
+.req-actions .primary{background:var(--cyan);color:#fff}
+.req-actions .secondary{background:var(--surface);color:var(--cyan)}
+.req-actions button:disabled{opacity:.5}
+.req-list{display:flex;flex-direction:column;gap:10px}
+.req-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.req-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.req-kind{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.req-status{font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--surface2);color:var(--text2)}
+.req-status.modtaget{background:#fff3e0;color:#b86a1f}
+.req-status.i_gang{background:#e3eef9;color:#2b5d99}
+.req-status.faerdig{background:#e2f3ec;color:#1f7a5c}
+.req-status.afvist{background:#f7e3df;color:#b4432f}
+.req-text{font-size:15px;line-height:1.45;white-space:pre-wrap}
+.req-svar{margin-top:10px;padding:10px 12px;border-left:3px solid var(--cyan);background:var(--bg);font-size:14px;line-height:1.45;white-space:pre-wrap}
+.req-meta{font-size:12px;color:var(--text2);margin-top:8px}
+.req-admin{display:flex;gap:8px;margin-top:10px}
+.req-admin select,.req-admin input{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px}
+.req-admin button{padding:8px 12px;border-radius:8px;border:none;background:var(--cyan);color:#fff;font-size:13px;cursor:pointer}
+.req-empty{color:var(--text2);font-size:14px;text-align:center;padding:20px}
+.nav-badge{display:inline-block;min-width:18px;padding:1px 6px;border-radius:10px;background:var(--orange);color:#fff;font-size:11px;margin-left:4px}
+.req-pane .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.req-pane .stat-card{min-width:0;padding:14px 8px}
+.req-pane .stat-num{font-size:26px}
+.req-pane .stat-label{font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">⚡</div>
+    <h1>Lokly</h1>
+    <p>Din indgang til Lokly</p>
+    <input type="text" id="username" placeholder="Brugernavn" autocomplete="username" autofocus>
+    <input type="password" id="password" placeholder="Adgangskode" autocomplete="current-password">
+    <button id="loginBtn" onclick="doLogin()">Log ind</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div class="app-screen" id="appScreen">
+  <div class="app-header">
+    <div class="brand">
+      <h2>Lokly</h2>
+      <span class="company-badge" id="companyName"></span>
+    </div>
+    <span class="admin-badge" id="adminBadge" style="display:none">Admin</span>
+    <div class="header-actions" id="headerActions" style="display:none">
+      <button class="btn-header" id="btnSearch" onclick="toggleSearch()" title="Søg">🔍</button>
+      <button class="btn-new-chat" id="btnNewChat" onclick="newChat()" title="Ny chat">＋</button>
+    </div>
+  </div>
+  <div class="tab-content">
+
+    <div class="tab-pane active" id="tabChat">
+      <div class="search-bar" id="searchBar">
+        <input type="text" id="searchInput" placeholder="Søg i beskeder..." oninput="doSearch(this.value)">
+        <button onclick="closeSearch()">✕</button>
+      </div>
+      <div class="chat-messages" id="messages"></div>
+      <div class="chat-input">
+        <div class="attach-preview" id="attachPreview"></div>
+        <div class="chat-input-row">
+          <button class="btn-attach" onclick="$('fileInput').click()" title="Vedhæft fil">📎</button>
+          <input type="file" id="fileInput" multiple accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="handleFiles(this.files)">
+          <textarea id="input" rows="1" placeholder="Skriv en besked..." onkeydown="handleKey(event)"></textarea>
+          <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-pane admin-pane" id="tabAdmin">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Kunder</div></div>
+        <div class="stat-card"><div class="stat-num" id="statActive">—</div><div class="stat-label">Aktive</div></div>
+        <div class="stat-card"><div class="stat-num" id="statMsgs">—</div><div class="stat-label">Beskeder</div></div>
+      </div>
+      <div>
+        <div class="admin-section-header">
+          <h3>Kunder</h3>
+          <button class="btn-add" onclick="openAddModal()">＋ Tilføj</button>
+        </div>
+      </div>
+      <div class="customer-list" id="customerList">
+        <div style="color:var(--text2);font-size:14px;text-align:center;padding:20px">Henter…</div>
+      </div>
+      <div class="admin-section-header" style="margin-top:20px"><h3>Ønsker og henvendelser</h3></div>
+      <div class="req-list" id="adminReqList"><div class="req-empty">Henter…</div></div>
+    </div>
+
+    <div class="tab-pane req-pane" id="tabDashboard">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num" id="ovOpen">—</div><div class="stat-label">Åbne ønsker</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovDone">—</div><div class="stat-label">Bygget til dig</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovMsgs">—</div><div class="stat-label">Beskeder</div></div>
+      </div>
+      <div class="req-form" id="ovOnbBox" hidden><h3>Sådan kommer I i gang</h3><div class="req-list" id="ovOnb"></div></div>
+      <div class="req-form" id="ovUgeBox">
+        <h3>Det har din assistent gjort de sidste 7 dage</h3>
+        <div class="stats-row" style="margin-top:6px"><div class="stat-card"><div class="stat-num" id="ugHenv">0</div><div class="stat-label">Henvendelser</div></div><div class="stat-card"><div class="stat-num" id="ugOpk">0</div><div class="stat-label">Opkald taget</div></div><div class="stat-card"><div class="stat-num" id="ugTilb">0</div><div class="stat-label">Tilbud sendt</div></div></div>
+        <p id="ugSum" style="margin-top:8px"></p>
+        <div class="req-list" id="ovTidslinje" style="margin-top:8px"></div>
+      </div>
+      <div class="req-form" id="ovForslagBox" hidden><h3>Forslag fra Lokly</h3><p>Idéer, vi tror giver værdi for jer. Tryk, og det bliver et ønske.</p><div class="req-list" id="ovForslag"></div></div>
+      <div class="req-form" id="ovKonsulent">
+        <h3>Din konsulent</h3>
+        <p><b>Alex Rex</b> · Din faste AI- og IT-konsulent</p>
+        <div class="req-actions"><a class="primary" style="text-align:center;text-decoration:none;padding:12px;border-radius:10px;background:var(--cyan);color:#fff;font-weight:600;flex:1" href="tel:+4550551301">Ring til Alex</a><button class="secondary" onclick="switchTab('Requests',$('navRequests'))">Skriv et ønske</button></div>
+        <p id="ovMoede" hidden></p>
+      </div>
+      <div class="req-form" id="ovLinksBox" hidden><h3>Dine systemer</h3><div class="req-list" id="ovLinks"></div></div>
+      <div class="req-form"><h3>Bygget til dig</h3><p>Det, Lokly har leveret. Nyeste først.</p><div class="req-list" id="ovLeverancer"><div class="req-empty">Intet endnu.</div></div></div>
+      <div class="req-form" id="ovAftaleBox" hidden><h3>Din aftale</h3><p id="ovAftale" style="white-space:pre-wrap;color:var(--text)"></p></div>
+    </div>
+
+    <div class="tab-pane req-pane" id="tabRequests">
+      <div class="req-form">
+        <h3>Bed om noget nyt, eller kontakt Alex</h3>
+        <p>Skriv, hvad du vil have bygget eller ændret, eller hvad der driller. Alex får det med det samme, og du kan følge status her.</p>
+        <textarea id="reqText" placeholder="Fx: Chatten skal kunne booke en besigtigelse. Eller: Telefonisten stillede ikke om i går kl. 15."></textarea>
+        <div style="display:flex;align-items:center;gap:8px"><button onclick="$('reqFile').click()" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text2);cursor:pointer">Vedhæft billede</button><input type="file" id="reqFile" accept="image/*" multiple style="display:none" onchange="reqFiles(this.files)"><span id="reqFileInfo" style="font-size:12px;color:var(--text2)"></span></div>
+        <div class="req-actions">
+          <button class="primary" id="reqBtnOenske" onclick="sendRequest('oenske')">Send ønske</button>
+          <button class="secondary" id="reqBtnKontakt" onclick="sendRequest('kontakt')">Kontakt Alex</button>
+        </div>
+        <div id="reqMsg" style="font-size:13px;color:var(--green);min-height:18px"></div>
+      </div>
+      <div class="req-list" id="reqList"><div class="req-empty">Henter…</div></div>
+    </div>
+
+    <div class="tab-pane req-pane" id="tabDocs">
+      <div class="req-form"><h3>Dokumenter</h3><p>Aftale, prislister og vejledninger fra Lokly. Tryk for at åbne.</p><div class="req-list" id="docList"><div class="req-empty">Henter…</div></div></div>
+    </div>
+
+    <div class="tab-pane settings-pane" id="tabSettings">
+      <h3>Indstillinger</h3>
+      <!-- Read-only view (admin) -->
+      <div id="settingsReadOnly">
+        <div class="setting-field"><label>Firmanavn</label><div class="value" id="setCompany"></div></div>
+        <div class="setting-field"><label>Email</label><div class="value" id="setEmail"></div></div>
+        <div class="setting-field"><label>Telefon</label><div class="value" id="setPhone"></div></div>
+        <div class="setting-field"><label>Adresse</label><div class="value" id="setAddress"></div></div>
+        <div class="setting-field"><label>Åbningstider</label><div class="value" id="setHours"></div></div>
+      </div>
+      <!-- Editable view (customer) -->
+      <div id="settingsEditable" style="display:none">
+        <div class="push-box"><b>Beskeder på telefonen</b><p id="pushHint">Få besked, når dit ønske er i gang eller færdigt. På iPhone skal appen først ligge på hjemmeskærmen (Del, Føj til hjemmeskærm).</p><button class="btn-primary" style="width:100%" id="pushBtn" onclick="togglePush()">Slå beskeder til</button><div id="pushMsg" style="font-size:13px;margin-top:8px;min-height:18px"></div></div>
+        <div class="setting-field"><label>Firmanavn</label><div class="value" id="setCompanyRO"></div></div>
+        <div class="form-field"><label>Email</label><input id="editEmail" placeholder="info@firma.dk" maxlength="128"></div>
+        <div class="form-field"><label>Telefon</label><input id="editPhone" placeholder="+45 12 34 56 78" maxlength="64"></div>
+        <div class="form-field"><label>Adresse</label><input id="editAddress" placeholder="Vesterbrogade 1" maxlength="256"></div>
+        <div class="form-field"><label>Åbningstider</label><input id="editHours" placeholder="Man-fre 8-16" maxlength="256"></div>
+        <button class="btn-primary" style="width:100%;margin-top:8px" onclick="saveMySettings()">Gem indstillinger</button>
+        <div id="settingsSaved" style="color:var(--green);font-size:13px;text-align:center;margin-top:10px;min-height:20px"></div>
+      </div>
+      <div class="push-box" id="pwBox" style="margin-top:16px"><b>Skift kodeord</b><p>Mindst 8 tegn.</p>
+        <div class="form-field"><input id="pwOld" type="password" placeholder="Nuværende kodeord" autocomplete="current-password"></div>
+        <div class="form-field"><input id="pwNew" type="password" placeholder="Nyt kodeord" autocomplete="new-password"></div>
+        <button class="btn-primary" style="width:100%" onclick="changePassword()">Gem nyt kodeord</button><div id="pwChangeMsg" style="font-size:13px;margin-top:8px;min-height:18px"></div></div>
+      <button class="settings-logout" onclick="doLogout()">Log ud</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="active" id="navChat" onclick="switchTab('Chat',this)"><span class="nav-icon">💬</span>Chat</button>
+    <button id="navAdmin" hidden onclick="switchTab('Admin',this)"><span class="nav-icon">📊</span>Dashboard</button>
+    <button id="navRequests" hidden onclick="switchTab('Requests',this)"><span class="nav-icon">✉️</span>Ønsker<span class="nav-badge" id="reqBadge" hidden>0</span></button>
+    <button id="navDashboard" hidden onclick="switchTab('Dashboard',this)"><span class="nav-icon">📊</span>Overblik</button>
+    <button id="navDocs" hidden onclick="switchTab('Docs',this)"><span class="nav-icon">📄</span>Dokumenter</button>
+    <button id="navSettings" onclick="switchTab('Settings',this)"><span class="nav-icon">⚙️</span>Indstillinger</button>
+  </nav>
+</div>
+
+<!-- Modal: Tilføj / Rediger -->
+<div class="modal-overlay" id="customerModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2 id="modalTitle">Tilføj kunde</h2>
+    <p class="modal-sub" id="modalSub">Adgangskoden genereres automatisk.</p>
+    <div class="form-row">
+      <div class="form-field"><label>Firmanavn *</label><input id="fCompany" placeholder="SPS Gruppen" maxlength="128"></div>
+      <div class="form-field"><label>Brugernavn *</label><input id="fUsername" placeholder="sps-gruppen" maxlength="64"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Email</label><input id="fEmail" type="email" placeholder="info@firma.dk" maxlength="128"></div>
+      <div class="form-field"><label>Telefon</label><input id="fPhone" placeholder="+45 12 34 56 78" maxlength="64"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Agent ID</label><input id="fAgentId" placeholder="sps-gruppen" maxlength="128"></div>
+      <div class="form-field"><label>Plan</label>
+        <select id="fPlan"><option value="basic">Basic</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select>
+      </div>
+    </div>
+    <div class="form-field"><label>Session Key</label><input id="fSessionKey" placeholder="lokly:sps:sebastian" maxlength="256"></div>
+    <div class="form-field"><label>Kundens chat-API (bruges i stedet for agent-id, hvis udfyldt)</label><input id="fChatUrl" placeholder="https://sps.snorkild.cc/api/chat" maxlength="512"></div>
+    <div class="form-field"><label>Website URL</label><input id="fWebsite" placeholder="https://spsgruppen.dk" maxlength="512"></div>
+    <div class="form-field"><label>Dine systemer (én pr. linje: Navn | https://…)</label><textarea id="fLinks" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit" placeholder="Opgave-app | https://sps.snorkild.cc"></textarea></div>
+    <div class="form-field"><label>Bygget til kunden (én pr. linje, nyeste øverst)</label><textarea id="fLeverancer" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit" placeholder="12/9: Chat med billedanalyse på hjemmesiden"></textarea></div>
+    <div class="form-field"><label>Sådan kommer I i gang (én pr. linje, start med [x] når gjort)</label><textarea id="fOnb" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit" placeholder="[x] Opstartsmøde holdt&#10;[ ] Prisliste modtaget&#10;[ ] Chat sat på hjemmesiden"></textarea></div>
+    <div class="form-field"><label>Forslag til kunden (én pr. linje, vises i Overblik med "Ja, byg det")</label><textarea id="fForslag" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit" placeholder="Automatisk sms til kunder, der ringer forgæves"></textarea></div>
+    <div class="form-row">
+      <div class="form-field"><label>API-nøgle til kundens systemer</label><input id="fApiKey" readonly style="font-family:monospace;font-size:12px" placeholder="genereres ved gem"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Næste møde</label><input id="fMoede" placeholder="Torsdag 18/9 kl. 10, hos jer" maxlength="256"></div>
+      <div class="form-field"><label>Aftale (kort)</label><input id="fAftale" placeholder="8.500 kr/md, ingen binding" maxlength="512"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Adresse</label><input id="fAddress" placeholder="Vesterbrogade 1" maxlength="256"></div>
+      <div class="form-field"><label>Åbningstider</label><input id="fHours" placeholder="Man-fre 8-16" maxlength="256"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Annuller</button>
+      <button class="btn-primary" id="modalSaveBtn" onclick="saveCustomer()">Opret kunde</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Kundens beskeder -->
+<div class="modal-overlay" id="histModal" onclick="if(event.target===this)$('histModal').classList.remove('open')">
+  <div class="modal" style="max-height:85vh;display:flex;flex-direction:column">
+    <h2 id="histTitle">Beskeder</h2>
+    <p class="modal-sub" id="histSub"></p>
+    <div id="histBody" style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 0"></div>
+    <div class="modal-actions"><button class="btn-primary" onclick="$('histModal').classList.remove('open')">Luk</button></div>
+  </div>
+</div>
+
+<!-- Modal: Dokumenter (admin) -->
+<div class="modal-overlay" id="docModal" onclick="if(event.target===this)$('docModal').classList.remove('open')">
+  <div class="modal" style="max-height:85vh;display:flex;flex-direction:column">
+    <h2 id="docTitle">Dokumenter</h2>
+    <p class="modal-sub">Aftale, prisliste, vejledning. Kunden får en push-besked ved nye filer.</p>
+    <div class="form-field"><input id="docFileTitle" placeholder="Titel (fx Konsulentaftale, sept. 2026)" maxlength="120"></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><input type="file" id="docFile" accept=".pdf,.png,.jpg,.jpeg,.txt,.md,.docx,.xlsx,.csv"><button class="btn-primary" onclick="uploadDoc()">Læg op</button></div>
+    <div id="docMsg" style="font-size:13px;min-height:18px"></div>
+    <div id="docAdminList" class="req-list" style="overflow-y:auto"></div>
+    <div class="modal-actions"><button class="btn-secondary" onclick="$('docModal').classList.remove('open')">Luk</button></div>
+  </div>
+</div>
+
+<!-- Modal: Adgangskode -->
+<div class="modal-overlay" id="pwModal" onclick="if(event.target===this)closePwModal()">
+  <div class="modal">
+    <h2>Færdig</h2>
+    <p class="modal-sub">Send disse oplysninger til kunden. Vises kun én gang.</p>
+    <div class="pw-display">
+      <div class="pw-label">Brugernavn</div>
+      <div class="pw-val" id="pwUsername" style="font-size:18px;letter-spacing:1px"></div>
+      <div class="pw-label" style="margin-top:16px">Adgangskode</div>
+      <div class="pw-val" id="pwValue"></div>
+      <button class="pw-copy" onclick="copyPw()">Kopiér adgangskode</button>
+    </div>
+    <div class="modal-actions"><button class="btn-primary" onclick="closePwModal()">Færdig</button></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let chatHistory = [], userData = {}, editingUsername = null;
+const tabMap = {Chat:'tabChat',Admin:'tabAdmin',Dashboard:'tabDashboard',Settings:'tabSettings',Requests:'tabRequests',Docs:'tabDocs'};
+
+function switchTab(name, btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  $(tabMap[name]).classList.add('active'); btn.classList.add('active');
+  if(name==='Chat') $('input').focus();
+  if(name==='Admin') loadAdminData();
+  if(name==='Requests') loadRequests();
+  if(name==='Dashboard') loadOverview();
+  if(name==='Docs') loadDocs();
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+fetch('/api/me').then(r=>r.ok?r.json():null).then(d=>{if(d)enterApp(d);}).catch(()=>{});
+
+async function doLogin(){
+  const btn=$('loginBtn'); btn.disabled=true; $('loginError').textContent='';
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value,password:$('password').value})});
+    const d=await r.json(); if(!r.ok) throw d.error;
+    const me=await fetch('/api/me'); if(!me.ok) throw 'Session fejl';
+    enterApp(await me.json());
+  }catch(e){$('loginError').textContent=e||'Fejl ved login';}
+  btn.disabled=false;
+}
+
+async function enterApp(data){
+  userData=data;
+  $('loginScreen').style.display='none'; $('appScreen').style.display='flex';
+  $('companyName').textContent=data.company;
+  if(data.is_admin){
+    $('adminBadge').style.display=''; $('navAdmin').hidden=false; $('navChat').hidden=true;
+    $('settingsReadOnly').style.display=''; $('settingsEditable').style.display='none';
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+    $('tabAdmin').classList.add('active'); $('navAdmin').classList.add('active');
+    setField('setCompany',data.company); setField('setEmail',data.email);
+    setField('setPhone',data.phone); setField('setAddress',data.address); setField('setHours',data.hours);
+    loadAdminData();
+  } else {
+    $('headerActions').style.display='';
+    // Customer — show Chat + Overblik + Indstillinger
+    $('navAdmin').hidden=true; $('navDashboard').hidden=false; $('navRequests').hidden=false; $('navDocs').hidden=false; updateReqBadge(data.open_requests||0); loadRequests();
+    $('settingsReadOnly').style.display='none'; $('settingsEditable').style.display='';
+    $('setCompanyRO').textContent=data.company;
+    $('editEmail').value=data.email||''; $('editPhone').value=data.phone||'';
+    $('editAddress').value=data.address||''; $('editHours').value=data.hours||'';
+    // Overblik stats
+    $('myMsgs').textContent=data.messages||0;
+    $('myStatus').textContent='Aktiv'; $('myStatus').style.color='var(--green)';
+    const planLabels={basic:'Basic',pro:'Pro',enterprise:'Enterprise'};
+    $('myPlan').textContent=planLabels[data.plan]||data.plan||'Basic';
+    $('myCompany').textContent=data.company;
+    $('myEmail').textContent=data.email||'Ikke angivet'; $('myEmail').style.color=data.email?'':'var(--text2)';
+    $('myPhone').textContent=data.phone||'Ikke angivet'; $('myPhone').style.color=data.phone?'':'var(--text2)';
+    $('myAddress').textContent=data.address||'Ikke angivet'; $('myAddress').style.color=data.address?'':'var(--text2)';
+    $('myHours').textContent=data.hours||'Ikke angivet'; $('myHours').style.color=data.hours?'':'var(--text2)';
+    $('myWebsite').textContent=data.website_url||'Ikke angivet'; $('myWebsite').style.color=data.website_url?'':'var(--text2)';
+    initPushUI();
+    const want=new URLSearchParams(location.search).get('tab');
+    if(want&&tabMap[want]&&$('nav'+want)&&!$('nav'+want).hidden){switchTab(want,$('nav'+want));history.replaceState(null,'','/');await loadHistory();return;}
+    // Default tab: Chat
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+    $('tabChat').classList.add('active'); $('navChat').classList.add('active');
+    await loadHistory();
+    if(!$('messages').children.length){$('messages').innerHTML='<div class="req-empty" style="margin:auto;max-width:300px">Her skriver du til din egen assistent. Den kender din virksomhed. Spørg om priser, opgaver eller bed den om at skrive et tilbud.</div>';}
+    $('input').focus();
+  }
+}
+
+function setField(id,val){const el=$(id);if(val){el.textContent=val;el.classList.remove('empty');}else{el.textContent='Ikke angivet';el.classList.add('empty');}}
+
+async function doLogout(){
+  await fetch('/api/logout',{method:'POST'});
+  chatHistory=[]; userData={};
+  $('messages').innerHTML='';
+  $('appScreen').style.display='none'; $('loginScreen').style.display='flex';
+  $('username').value=''; $('password').value='';
+  $('navChat').hidden=false; $('navAdmin').hidden=true; $('navDashboard').hidden=true; $('navRequests').hidden=true; $('navDocs').hidden=true; $('adminBadge').style.display='none'; $('headerActions').style.display='none';
+  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  $('navChat').classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  $('tabChat').classList.add('active');
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+async function loadHistory(){
+  try{
+    const r=await fetch('/api/history'); if(!r.ok) return;
+    const msgs=await r.json();
+    $('messages').innerHTML='';
+    chatHistory=[];
+    let lastDay='';
+    msgs.forEach(m=>{
+      const day=m.ts?new Date(m.ts*1000).toLocaleDateString('da-DK',{day:'numeric',month:'long'}):'';
+      if(day && day!==lastDay){
+        const div=document.createElement('div'); div.className='day-divider';
+        div.innerHTML=`<span>${day}</span>`; $('messages').appendChild(div);
+        lastDay=day;
+      }
+      addMsg(m.role,m.content,false,m.ts);
+      chatHistory.push({role:m.role,content:m.content});
+    });
+    // Keep context window manageable
+    if(chatHistory.length>40) chatHistory=chatHistory.slice(-40);
+    scrollBottom();
+  }catch(e){}
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+function renderContent(text){
+  if(!text) return '';
+  // Escape HTML
+  let s=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Code blocks ```...```
+  s=s.replace(/```(\w*)\n?([\s\S]*?)```/g,(m,lang,code)=>`<pre><code>${code.trim()}</code></pre>`);
+  // Inline code `...`
+  s=s.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  // Bold **text**
+  s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  // Italic *text*
+  s=s.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g,'<em>$1</em>');
+  // Headings ### ## #
+  s=s.replace(/^### (.+)$/gm,'<strong style="font-size:14px;color:var(--cyan)">$1</strong>');
+  s=s.replace(/^## (.+)$/gm,'<strong style="font-size:15px;color:var(--cyan)">$1</strong>');
+  s=s.replace(/^# (.+)$/gm,'<strong style="font-size:16px;color:var(--cyan)">$1</strong>');
+  // Bullet lists
+  s=s.replace(/^[-•] (.+)$/gm,'<span style="display:block;padding-left:14px">• $1</span>');
+  // Numbered lists
+  s=s.replace(/^(\d+)\. (.+)$/gm,'<span style="display:block;padding-left:14px">$1. $2</span>');
+  // Links
+  s=s.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
+  // Emails
+  s=s.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,'<a href="mailto:$1">$1</a>');
+  // Phone numbers
+  s=s.replace(/(\+?\d[\d\s-]{7,})/g,'<a href="tel:$1">$1</a>');
+  return s;
+}
+
+function addMsg(role,text,scroll=true,ts=null){
+  const el=document.createElement('div'); el.className='msg '+role;
+  el.innerHTML=renderContent(text);
+  // Timestamp
+  if(ts){
+    const d=new Date(ts*1000);
+    const time=d.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+    const span=document.createElement('span');span.className='time';span.textContent=time;
+    el.appendChild(span);
+  }
+  el.dataset.text=(text||'').toLowerCase();
+  // Make images clickable for lightbox
+  el.querySelectorAll('img').forEach(img=>{
+    img.style.cursor='pointer';
+    img.onclick=e=>{e.stopPropagation();openLightbox(img.src);};
+  });
+  $('messages').appendChild(el);
+  if(scroll) scrollBottom();
+  return el;
+}
+
+function openLightbox(src){
+  let lb=$('lightbox');
+  if(!lb){
+    lb=document.createElement('div');lb.id='lightbox';lb.className='lightbox';
+    lb.innerHTML='<button class="close" onclick="closeLightbox()">✕</button><img>';
+    lb.onclick=closeLightbox;
+    document.body.appendChild(lb);
+  }
+  lb.querySelector('img').src=src;
+  lb.classList.add('open');
+}
+function closeLightbox(){const lb=$('lightbox');if(lb)lb.classList.remove('open');}
+function scrollBottom(){requestAnimationFrame(()=>{$('messages').scrollTop=$('messages').scrollHeight;});}
+function handleKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+  requestAnimationFrame(()=>{e.target.style.height='auto';e.target.style.height=Math.min(e.target.scrollHeight,120)+'px';});
+}
+
+async function sendMessage(){
+  const txt=$('input').value.trim();
+  const hasFiles=pendingFiles.length>0;
+  if(!txt && !hasFiles) return;
+  $('input').value=''; $('input').style.height='auto';
+
+  // Show user message with attachments
+  const nowTs=Math.floor(Date.now()/1000);
+  const userEl=addMsg('user',txt||'',true,nowTs);
+  if(hasFiles){
+    for(const f of pendingFiles){
+      if(f.type.startsWith('image/')){
+        const img=document.createElement('img');img.src=URL.createObjectURL(f);img.style.cursor='pointer';img.onclick=e=>{e.stopPropagation();openLightbox(img.src);};userEl.appendChild(img);
+      } else if(f.type.startsWith('video/')){
+        const vid=document.createElement('video');vid.src=URL.createObjectURL(f);vid.controls=true;vid.style.maxHeight='200px';userEl.appendChild(vid);
+      } else {
+        userEl.appendChild(document.createTextNode('\n📄 '+f.name));
+      }
+    }
+  }
+
+  // Build message content (text + base64 images for API)
+  let content = txt || '';
+  let files = [];
+  if(hasFiles){
+    files = await filesToBase64([...pendingFiles]);
+    // Add image descriptions to context
+    const imgFiles = files.filter(f=>f.type.startsWith('image/'));
+    if(imgFiles.length) content += (content?'\n\n':'') + `[${imgFiles.length} billede${imgFiles.length>1?'r':''} vedhæftet]`;
+    const otherFiles = files.filter(f=>!f.type.startsWith('image/'));
+    if(otherFiles.length) content += (content?'\n\n':'') + `[Filer: ${otherFiles.map(f=>f.name).join(', ')}]`;
+  }
+  clearAttachments();
+
+  chatHistory.push({role:'user',content:content});
+  $('sendBtn').disabled=true;
+
+  // Create agent bubble for streaming
+  const agentEl=document.createElement('div'); agentEl.className='msg agent streaming';
+  $('messages').appendChild(agentEl); scrollBottom();
+
+  let fullReply='';
+  try{
+    const body={message:content,messages:chatHistory};
+    if(files.length) body.files=files;
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)});
+
+    if(!r.ok){const d=await r.json(); throw d.error||'Serverfejl';}
+
+    const ct=r.headers.get('Content-Type')||'';
+    if(ct.includes('text/event-stream')){
+      const reader=r.body.getReader(); const dec=new TextDecoder(); let buf='';
+      while(true){
+        const {done,value}=await reader.read(); if(done) break;
+        buf+=dec.decode(value,{stream:true});
+        const lines=buf.split('\n'); buf=lines.pop();
+        for(const line of lines){
+          if(!line.startsWith('data: ')) continue;
+          const data=line.slice(6).trim(); if(data==='[DONE]') continue;
+          try{const {d}=JSON.parse(data); if(d){fullReply+=d;agentEl.textContent=fullReply;scrollBottom();}}catch(e){}
+        }
+      }
+    } else {
+      const d=await r.json(); fullReply=d.reply||''; agentEl.textContent=fullReply;
+    }
+  }catch(e){
+    fullReply=''; agentEl.textContent='⚠️ '+e;
+  }
+
+  agentEl.classList.remove('streaming');
+  // Add timestamp + render markdown + lightbox
+  if(fullReply){
+    agentEl.innerHTML=renderContent(fullReply);
+    const ts=document.createElement('span');ts.className='time';
+    ts.textContent=new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+    agentEl.appendChild(ts);
+    agentEl.querySelectorAll('img').forEach(img=>{img.style.cursor='pointer';img.onclick=e=>{e.stopPropagation();openLightbox(img.src);};});
+    chatHistory.push({role:'assistant',content:fullReply});
+  }
+  $('sendBtn').disabled=false; $('input').focus();
+}
+
+// ── Attachments ──────────────────────────────────────────────────────────────
+let pendingFiles = [];
+
+function handleFiles(fileList){
+  for(const f of fileList){
+    if(f.size > 10*1024*1024){alert(`${f.name} er for stor (maks 10 MB)`);continue;}
+    pendingFiles.push(f);
+    addThumb(f);
+  }
+  $('fileInput').value='';
+}
+
+function addThumb(f){
+  const prev=$('attachPreview');
+  prev.classList.add('has-files');
+  const div=document.createElement('div');div.className='attach-thumb';
+  const idx=pendingFiles.length-1;
+
+  if(f.type.startsWith('image/')){
+    const img=document.createElement('img');img.src=URL.createObjectURL(f);div.appendChild(img);
+  } else if(f.type.startsWith('video/')){
+    const vid=document.createElement('video');vid.src=URL.createObjectURL(f);vid.muted=true;div.appendChild(vid);
+  } else {
+    div.innerHTML='<div class="file-icon">📄</div>';
+  }
+
+  const rm=document.createElement('button');rm.className='remove';rm.textContent='✕';
+  rm.onclick=()=>{pendingFiles.splice(idx,1);div.remove();if(!pendingFiles.length)prev.classList.remove('has-files');};
+  div.appendChild(rm);
+  prev.appendChild(div);
+}
+
+function clearAttachments(){
+  pendingFiles=[];
+  $('attachPreview').innerHTML='';
+  $('attachPreview').classList.remove('has-files');
+}
+
+// Drag & drop
+document.addEventListener('DOMContentLoaded',()=>{
+  const chat=$('tabChat');
+  if(!chat)return;
+  chat.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();});
+  chat.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();if(e.dataTransfer.files.length)handleFiles(e.dataTransfer.files);});
+});
+
+// Paste image
+document.addEventListener('paste',e=>{
+  const items=e.clipboardData?.items;if(!items)return;
+  for(const item of items){
+    if(item.kind==='file'){
+      e.preventDefault();
+      handleFiles([item.getAsFile()]);
+      break;
+    }
+  }
+});
+
+function compressImage(file, maxBytes=4000000){
+  return new Promise((resolve)=>{
+    if(!file.type.startsWith('image/')){
+      // Non-image: just base64 encode
+      const reader=new FileReader();
+      reader.onload=()=>resolve({name:file.name,type:file.type,data:reader.result.split(',')[1]});
+      reader.readAsDataURL(file);
+      return;
+    }
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      let w=img.width, h=img.height;
+      // Resize if larger than 2048px on any side
+      const max=2048;
+      if(w>max||h>max){const r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r);}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      // Try quality levels until under maxBytes
+      let quality=0.85;
+      let data;
+      for(let i=0;i<5;i++){
+        data=canvas.toDataURL('image/jpeg',quality);
+        if(data.length*0.75<maxBytes) break;
+        quality-=0.15;
+      }
+      resolve({name:file.name,type:'image/jpeg',data:data.split(',')[1]});
+    };
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+function filesToBase64(files){
+  return Promise.all(files.map(f=>compressImage(f)));
+}
+
+// ── Search ───────────────────────────────────────────────────────────────────
+function toggleSearch(){
+  const bar=$('searchBar');
+  bar.classList.toggle('open');
+  if(bar.classList.contains('open')){$('searchInput').focus();}
+  else{$('searchInput').value='';clearSearch();}
+}
+function closeSearch(){
+  $('searchBar').classList.remove('open');
+  $('searchInput').value='';
+  clearSearch();
+}
+function doSearch(q){
+  const msgs=document.querySelectorAll('.msg');
+  if(!q.trim()){clearSearch();return;}
+  const term=q.toLowerCase();
+  let found=false;
+  msgs.forEach(m=>{
+    const text=m.dataset.text||m.textContent.toLowerCase();
+    if(text.includes(term)){
+      m.classList.add('search-highlight');m.classList.remove('search-dim');
+      if(!found){m.scrollIntoView({behavior:'smooth',block:'center'});found=true;}
+    } else {
+      m.classList.remove('search-highlight');m.classList.add('search-dim');
+    }
+  });
+}
+function clearSearch(){
+  document.querySelectorAll('.msg').forEach(m=>{m.classList.remove('search-highlight','search-dim');});
+}
+
+async function newChat(){
+  if(chatHistory.length>0 && !confirm('Start ny chat? Historikken slettes.')) return;
+  await fetch('/api/chat/clear',{method:'POST'});
+  chatHistory=[];
+  $('messages').innerHTML='';
+  $('input').focus();
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+async function loadAdminData(){
+  try{
+    loadAdminRequests();
+    const [sr,cr]=await Promise.all([fetch('/api/admin/stats'),fetch('/api/admin/customers')]);
+    const stats=await sr.json(), custs=await cr.json();
+    $('statTotal').textContent=stats.total;
+    $('statActive').textContent=stats.active;
+    $('statMsgs').textContent=stats.messages;
+    renderCustomers(custs);
+  }catch(e){$('customerList').innerHTML=`<div style="color:var(--red);padding:12px;font-size:14px">Fejl: ${e}</div>`;}
+}
+
+function renderCustomers(custs){
+  if(!custs.length){$('customerList').innerHTML='<div style="color:var(--text2);font-size:14px;text-align:center;padding:30px">Ingen kunder endnu — tilføj din første 👆</div>';return;}
+  $('customerList').innerHTML=custs.map(c=>{
+    const ini=c.company.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const meta=[c.email,c.phone].filter(Boolean).join(' · ')||(c.messages?`${c.messages} beskeder`:'Ingen aktivitet');
+    const pLabel={basic:'Basic',pro:'Pro',enterprise:'Enterprise'}[c.plan]||c.plan;
+    return `<div class="customer-card">
+      <div class="customer-avatar">${ini}</div>
+      <div class="customer-info"><div class="co">${esc(c.company)}</div><div class="meta">${esc(meta)}</div></div>
+      <span class="customer-plan plan-${c.plan||'basic'}">${pLabel}</span>
+      <div class="customer-actions">
+        <button class="btn-icon" title="Se beskeder" style="font-size:12px;width:auto;padding:0 8px" onclick="openHistory('${esc(c.username)}','${esc(c.company)}')">Beskeder</button>
+        <button class="btn-icon" title="Dokumenter" style="font-size:12px;width:auto;padding:0 8px" onclick="openDocs('${esc(c.username)}','${esc(c.company)}')">Filer</button>
+        <button class="btn-icon" title="Nulstil kode" onclick="resetPw('${esc(c.username)}','${esc(c.company)}')">🔑</button>
+        <button class="btn-icon" title="Rediger" onclick='openEditModal(${JSON.stringify(c)})'>✏️</button>
+        <button class="btn-icon danger" title="Slet" onclick="deleteCustomer('${esc(c.username)}','${esc(c.company)}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function openAddModal(){
+  $('fOnb').value='';$('fForslag').value='';$('fApiKey').value='';$('fChatUrl').value='';$('fLinks').value='';$('fLeverancer').value='';$('fMoede').value='';$('fAftale').value='';
+  editingUsername=null;
+  $('modalTitle').textContent='Tilføj kunde'; $('modalSub').textContent='Adgangskoden genereres automatisk.';
+  $('modalSaveBtn').textContent='Opret kunde'; $('fUsername').disabled=false;
+  ['fCompany','fUsername','fEmail','fPhone','fAgentId','fSessionKey','fWebsite','fAddress','fHours'].forEach(id=>$(id).value='');
+  $('fPlan').value='basic'; $('customerModal').classList.add('open');
+}
+
+function openEditModal(c){
+  $('fOnb').value=c.onboarding||'';$('fForslag').value=c.forslag||'';$('fApiKey').value=c.api_key||'';$('fChatUrl').value=c.chat_url||'';$('fLinks').value=c.links||'';$('fLeverancer').value=c.leverancer||'';$('fMoede').value=c.naeste_moede||'';$('fAftale').value=c.aftale||'';
+  editingUsername=c.username;
+  $('modalTitle').textContent='Rediger'; $('modalSub').textContent=c.company;
+  $('modalSaveBtn').textContent='Gem'; $('fUsername').value=c.username; $('fUsername').disabled=true;
+  $('fCompany').value=c.company||''; $('fEmail').value=c.email||''; $('fPhone').value=c.phone||'';
+  $('fAgentId').value=c.agent_id||''; $('fSessionKey').value=c.session_key||'';
+  $('fWebsite').value=c.website_url||''; $('fAddress').value=c.address||''; $('fHours').value=c.hours||'';
+  $('fPlan').value=c.plan||'basic'; $('customerModal').classList.add('open');
+}
+
+function closeModal(){$('customerModal').classList.remove('open');}
+
+async function saveCustomer(){
+  const btn=$('modalSaveBtn'); btn.disabled=true;
+  try{
+    const body={company:$('fCompany').value.trim(),username:$('fUsername').value.trim().toLowerCase(),
+      email:$('fEmail').value.trim(),phone:$('fPhone').value.trim(),agent_id:$('fAgentId').value.trim(),
+      session_key:$('fSessionKey').value.trim(),website_url:$('fWebsite').value.trim(),
+      address:$('fAddress').value.trim(),hours:$('fHours').value.trim(),plan:$('fPlan').value,chat_url:$('fChatUrl').value,forslag:$('fForslag').value,onboarding:$('fOnb').value,links:$('fLinks').value,leverancer:$('fLeverancer').value,naeste_moede:$('fMoede').value,aftale:$('fAftale').value};
+    if(editingUsername){
+      const r=await fetch(`/api/admin/customers/${encodeURIComponent(editingUsername)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const d=await r.json(); if(!r.ok) throw d.error;
+      closeModal(); loadAdminData();
+    } else {
+      const r=await fetch('/api/admin/customers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const d=await r.json(); if(!r.ok) throw d.error;
+      closeModal(); showPwModal(d.username,d.password); loadAdminData();
+    }
+  }catch(e){alert('Fejl: '+e);}
+  btn.disabled=false;
+}
+
+function showPwModal(u,pw){$('pwUsername').textContent=u;$('pwValue').textContent=pw;$('pwModal').classList.add('open');}
+function closePwModal(){$('pwModal').classList.remove('open');}
+function copyPw(){navigator.clipboard.writeText($('pwValue').textContent).then(()=>{const b=$('pwModal').querySelector('.pw-copy');b.textContent='Kopieret';setTimeout(()=>{b.textContent='Kopiér adgangskode';},2000);});}
+
+async function deleteCustomer(username,company){
+  if(!confirm(`Slet ${company}?\n\nDette kan ikke fortrydes.`)) return;
+  const r=await fetch(`/api/admin/customers/${encodeURIComponent(username)}`,{method:'DELETE'});
+  if(r.ok) loadAdminData(); else alert('Fejl ved sletning');
+}
+
+async function resetPw(username,company){
+  if(!confirm(`Nulstil adgangskode for ${company}?`)) return;
+  const r=await fetch('/api/admin/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username})});
+  const d=await r.json();
+  if(r.ok) showPwModal(username,d.password); else alert('Fejl: '+d.error);
+}
+
+async function saveMySettings(){
+  try{
+    const body={email:$('editEmail').value.trim(),phone:$('editPhone').value.trim(),address:$('editAddress').value.trim(),hours:$('editHours').value.trim()};
+    const r=await fetch('/api/me/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok){const d=await r.json();throw d.error||'Fejl';}
+    $('settingsSaved').textContent='✅ Gemt!';
+    // Update dashboard display
+    $('myEmail').textContent=body.email||'Ikke angivet'; $('myEmail').style.color=body.email?'':'var(--text2)';
+    $('myPhone').textContent=body.phone||'Ikke angivet'; $('myPhone').style.color=body.phone?'':'var(--text2)';
+    $('myAddress').textContent=body.address||'Ikke angivet'; $('myAddress').style.color=body.address?'':'var(--text2)';
+    $('myHours').textContent=body.hours||'Ikke angivet'; $('myHours').style.color=body.hours?'':'var(--text2)';
+    setTimeout(()=>{$('settingsSaved').textContent='';},3000);
+  }catch(e){$('settingsSaved').textContent='❌ '+e;$('settingsSaved').style.color='var(--red)';setTimeout(()=>{$('settingsSaved').textContent='';$('settingsSaved').style.color='var(--green)';},3000);}
+}
+
+$('password').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+$('username').addEventListener('keydown',e=>{if(e.key==='Enter')$('password').focus();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closePwModal();}});
+
+// ── Ønsker & henvendelser ─────────────────────────────────────────────────────
+const REQ_LABEL={modtaget:'Venter',i_gang:'I gang',faerdig:'Færdig',afvist:'Afvist'};
+const REQ_KIND={oenske:'Ønske',kontakt:'Henvendelse'};
+function fmtTs(t){const d=new Date(t*1000);return d.toLocaleDateString('da-DK',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});}
+function updateReqBadge(n){const b=$('reqBadge');b.textContent=n;b.hidden=!n;}
+function reqCard(r,admin){
+  return `<div class="req-card">
+    <div class="req-top"><span class="req-kind">${REQ_KIND[r.type]||r.type}${admin?' · '+esc(r.company):''}</span><span class="req-status ${r.status}">${REQ_LABEL[r.status]||r.status}</span></div>
+    <div class="req-text">${esc(r.text)}</div>
+    ${(r.files&&r.files.length)?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${r.files.map(i=>`<img src="/api/requests/${r.id}/file/${i}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="openLightbox(this.src)">`).join('')}</div>`:''}
+    ${(admin&&r.alex_note)?`<div class="req-svar" style="border-left-color:var(--orange)"><small style="color:var(--text2)">Din kommentar til agenten</small><br>${esc(r.alex_note)}</div>`:''}
+    ${r.svar?`<div class="req-svar">${esc(r.svar)}</div>`:''}
+    ${(!admin&&r.status==='faerdig'&&r.godkendt!==true)?`<div class="req-admin"><button onclick="feedbackRequest(${r.id},true)">Godkend</button><button style="background:var(--surface);color:var(--cyan);border:1px solid var(--cyan)" onclick="feedbackRequest(${r.id},false)">Ikke helt</button></div>`:''}
+    ${(r.status==='faerdig'&&r.godkendt===true)?`<div class="req-meta" style="color:var(--green)">Godkendt af jer</div>`:''}
+    <div class="req-meta">#${r.id} · sendt ${fmtTs(r.created)}${r.updated!==r.created?' · opdateret '+fmtTs(r.updated):''}</div>
+    ${admin?adminActions(r):''}
+  </div>`;
+}
+async function loadRequests(){
+  try{const r=await fetch('/api/requests');if(!r.ok)return;const items=await r.json();
+    $('reqList').innerHTML=items.length?items.map(x=>reqCard(x,false)).join(''):'<div class="req-empty">Ingen ønsker endnu. Skriv det første ovenfor.</div>';
+    updateReqBadge(items.filter(x=>x.status==='modtaget'||x.status==='i_gang').length);
+  }catch(e){}
+}
+let reqAttach=[];
+function reqFiles(list){reqAttach=[...reqAttach,...Array.from(list).filter(f=>f.type.startsWith('image/'))].slice(0,4);$('reqFileInfo').textContent=reqAttach.length?reqAttach.length+' billede(r) valgt':'';}
+async function sendRequest(type){
+  const text=$('reqText').value.trim(); if(!text){$('reqMsg').style.color='var(--red)';$('reqMsg').textContent='Skriv en besked først.';return;}
+  $('reqBtnOenske').disabled=true;$('reqBtnKontakt').disabled=true;$('reqMsg').textContent='';
+  try{const files=reqAttach.length?await filesToBase64(reqAttach):[];
+    const r=await fetch('/api/requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,text,files})});
+    const d=await r.json(); if(!r.ok) throw d.error;
+    $('reqText').value='';reqAttach=[];$('reqFileInfo').textContent='';$('reqMsg').style.color='var(--green)';$('reqMsg').textContent=type==='kontakt'?'Sendt til Alex. Du hører fra ham.':'Ønsket er modtaget. Du kan følge status herunder.';
+    loadRequests();
+  }catch(e){$('reqMsg').style.color='var(--red)';$('reqMsg').textContent=e||'Kunne ikke sende. Prøv igen.';}
+  $('reqBtnOenske').disabled=false;$('reqBtnKontakt').disabled=false;
+}
+async function loadAdminRequests(){
+  try{const r=await fetch('/api/requests');if(!r.ok)return;const items=await r.json();
+    $('adminReqList').innerHTML=items.length?items.map(x=>reqCard(x,true)).join(''):'<div class="req-empty">Ingen ønsker endnu.</div>';
+  }catch(e){}
+}
+function adminActions(r){
+  if(r.status==='modtaget') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><input id="rn${r.id}" placeholder="Kommentar til agenten (kunden ser den ikke)" value="${esc(r.alex_note||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'i_gang')">Godkend og sæt i gang</button><button style="background:var(--surface);color:var(--red);border:1px solid var(--red)" onclick="adminSet(${r.id},'afvist')">Afvis</button></div></div>`;
+  if(r.status==='i_gang') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><input id="rv${r.id}" placeholder="Hvad er bygget? (vises til kunden)" value="${esc(r.svar||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'faerdig')">Sæt til færdig</button><button style="background:var(--surface);color:var(--text2);border:1px solid var(--border)" onclick="adminSet(${r.id},'modtaget')">Tilbage til venter</button></div></div>`;
+  return `<div class="req-admin"><button style="background:var(--surface);color:var(--cyan);border:1px solid var(--cyan)" onclick="adminSet(${r.id},'i_gang')">Genåbn</button></div>`;
+}
+async function adminSet(id,status){
+  const body={status}; const n=$('rn'+id); const v=$('rv'+id);
+  if(n) body.note=n.value; if(v) body.svar=v.value;
+  if(status==='afvist'&&!confirm('Afvis ønsket?')) return;
+  const r=await fetch('/api/admin/requests/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.ok) loadAdminRequests(); else alert('Kunne ikke gemme');
+}
+async function adminUpdateRequest(id){
+  const r=await fetch('/api/admin/requests/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:$('rs'+id).value,svar:$('rv'+id).value})});
+  if(r.ok) loadAdminRequests(); else alert('Kunne ikke gemme');
+}
+
+async function feedbackRequest(id,ok){
+  let comment='';
+  if(!ok){comment=prompt('Hvad mangler, eller hvad er anderledes end forventet?')||'';}
+  const r=await fetch('/api/requests/'+id+'/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ok,comment})});
+  if(r.ok){loadRequests();}else{alert('Kunne ikke sende');}
+}
+// ── Overblik ──────────────────────────────────────────────────────────────────
+async function loadOverview(){
+  try{const r=await fetch('/api/overview');if(!r.ok)return;const o=await r.json();
+    $('ovOpen').textContent=o.open.length;$('ovDone').textContent=o.done.length+o.leverancer.length;$('ovMsgs').textContent=o.messages;
+    if(o.naeste_moede){$('ovMoede').hidden=false;$('ovMoede').innerHTML='<b>Næste møde:</b> '+esc(o.naeste_moede);}else{$('ovMoede').hidden=true;}
+    $('ovLinksBox').hidden=!o.links.length;$('ovLinks').innerHTML=o.links.map(l=>`<a class="ov-link" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.navn||l.url)}</a>`).join('');
+    const lev=[...o.done.map(d=>`<div class="ov-item">${esc(d.svar||d.text)}<br><small>Ønske #${d.id} · færdigt ${fmtTs(d.updated)}</small></div>`),...o.leverancer.map(l=>`<div class="ov-item">${esc(l)}</div>`)];
+    $('ovLeverancer').innerHTML=lev.length?lev.join(''):'<div class="req-empty">Intet endnu. Det første, vi bygger, dukker op her.</div>';
+    $('ovAftaleBox').hidden=!o.aftale;$('ovAftale').textContent=o.aftale||'';
+    $('ovOnbBox').hidden=!(o.onboarding&&o.onboarding.length);
+    $('ovOnb').innerHTML=(o.onboarding||[]).map(x=>`<div class="ov-item" style="display:flex;gap:10px;align-items:center${x.done?';color:var(--text2)':''}"><span style="width:20px;height:20px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;${x.done?'background:var(--cyan);color:#fff':'border:2px solid var(--border)'}">${x.done?'✓':''}</span><span style="${x.done?'text-decoration:line-through':''}">${esc(x.text)}</span></div>`).join('');
+    const t=o.uge.typer||{};$('ugHenv').textContent=(t.henvendelse||0)+(t.lead||0);$('ugOpk').textContent=t.opkald||0;$('ugTilb').textContent=t.tilbud||0;
+    let sum=o.uge.antal?`<b>${o.uge.antal}</b> hændelser denne uge, <b>${o.total.antal}</b> siden start.`:'Ingen hændelser endnu. Når jeres systemer er i drift, står her, hvad assistenten har gjort.';
+    $('ugSum').innerHTML=sum;
+    $('ovTidslinje').innerHTML=(o.tidslinje||[]).slice(0,12).map(e=>`<div class="ov-item"><b>${esc(o.event_labels[e.type]||e.type)}</b>${e.text?': '+esc(e.text):''}<br><small>${fmtTs(e.ts)}${e.source?' · '+esc(e.source):''}</small></div>`).join('');
+    $('ovForslagBox').hidden=!(o.forslag&&o.forslag.length);
+    $('ovForslag').innerHTML=(o.forslag||[]).map(f=>`<div class="ov-item" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>${esc(f)}</span><button style="white-space:nowrap;padding:8px 12px;border-radius:8px;border:none;background:var(--cyan);color:#fff;font-weight:600;cursor:pointer" onclick="acceptForslag(this.dataset.t)" data-t="${esc(f)}">Ja, byg det</button></div>`).join('');
+  }catch(e){}
+}
+// ── Push ──────────────────────────────────────────────────────────────────────
+let swReg=null;
+async function initPushUI(){
+  const btn=$('pushBtn'),msg=$('pushMsg');
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){btn.disabled=true;msg.textContent='Beskeder kræver, at appen ligger på hjemmeskærmen.';return;}
+  const standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  try{swReg=await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;
+    if(!swReg.pushManager){btn.disabled=true;msg.textContent=standalone?'Din telefon understøtter ikke beskeder fra web-apps.':'Læg først appen på hjemmeskærmen: tryk Del-knappen i Safari, vælg "Føj til hjemmeskærm", og åbn Lokly derfra. Så kan du slå beskeder til her.';return;}
+    const sub=await swReg.pushManager.getSubscription();
+    if(sub){btn.textContent='Slå beskeder fra';btn.dataset.on='1';msg.style.color='var(--green)';msg.textContent='Beskeder er slået til på denne enhed.';}
+  }catch(e){msg.textContent='Kunne ikke starte beskeder: '+e;}
+}
+function b64ToU8(b){const p='='.repeat((4-b.length%4)%4);const r=atob((b+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(r,c=>c.charCodeAt(0));}
+async function togglePush(){
+  const btn=$('pushBtn'),msg=$('pushMsg');btn.disabled=true;msg.style.color='';
+  try{
+    if(!swReg){swReg=await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;}
+    if(!swReg.pushManager) throw 'Læg først appen på hjemmeskærmen (Del, Føj til hjemmeskærm) og åbn den derfra.';
+    const cur=await swReg.pushManager.getSubscription();
+    if(cur&&btn.dataset.on){await fetch('/api/push/unsubscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:cur.endpoint})});await cur.unsubscribe();btn.textContent='Slå beskeder til';delete btn.dataset.on;msg.textContent='Beskeder er slået fra.';}
+    else{
+      const perm=await Notification.requestPermission(); if(perm!=='granted') throw 'Du sagde nej til beskeder i telefonen. Det kan ændres under Indstillinger.';
+      const k=await (await fetch('/api/push/key')).json();
+      const sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(k.key)});
+      const r=await fetch('/api/push/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sub.toJSON())}); if(!r.ok) throw 'Serveren afviste';
+      btn.textContent='Slå beskeder fra';btn.dataset.on='1';msg.style.color='var(--green)';msg.textContent='Beskeder er slået til. Du får besked, når der er nyt.';
+    }
+  }catch(e){msg.style.color='var(--red)';msg.textContent=String(e);}
+  btn.disabled=false;
+}
+
+async function openHistory(username,company){
+  $('histTitle').textContent=company; $('histSub').textContent='Henter…'; $('histBody').innerHTML=''; $('histModal').classList.add('open');
+  try{const r=await fetch('/api/admin/history/'+encodeURIComponent(username)); const msgs=await r.json();
+    $('histSub').textContent=msgs.length?msgs.length+' beskeder, nyeste nederst':'Ingen beskeder endnu.';
+    $('histBody').innerHTML=msgs.map(m=>`<div class="msg ${m.role==='user'?'user':'agent'}" style="max-width:92%">${esc(m.content)}<div style="font-size:11px;opacity:.7;margin-top:4px">${m.ts?fmtTs(m.ts):''}</div></div>`).join('');
+    $('histBody').scrollTop=$('histBody').scrollHeight;
+  }catch(e){$('histSub').textContent='Kunne ikke hente.';}
+}
+
+async function acceptForslag(text){
+  const r=await fetch('/api/forslag/accept',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  if(r.ok){loadOverview();loadRequests();switchTab('Requests',$('navRequests'));}else{alert('Kunne ikke sende');}
+}
+
+// ── Dokumenter ────────────────────────────────────────────────────────────────
+function fmtBytes(b){return b>1e6?(b/1e6).toFixed(1)+' MB':Math.round(b/1e3)+' KB';}
+async function loadDocs(){
+  try{const r=await fetch('/api/docs');if(!r.ok)return;const items=await r.json();
+    $('docList').innerHTML=items.length?items.map(d=>`<a class="ov-link" href="/api/docs/${encodeURIComponent(userData.username)}/file/${d.id}" target="_blank" rel="noopener">${esc(d.titel)}<br><small style="color:var(--text2);font-weight:400">${esc(d.navn)} · ${fmtBytes(d.bytes)} · ${fmtTs(d.ts)}</small></a>`).join(''):'<div class="req-empty">Ingen dokumenter endnu.</div>';
+  }catch(e){}
+}
+let docUser='';
+async function openDocs(username,company){docUser=username;$('docTitle').textContent='Dokumenter: '+company;$('docMsg').textContent='';$('docFileTitle').value='';$('docFile').value='';$('docModal').classList.add('open');loadAdminDocs();}
+async function loadAdminDocs(){
+  const r=await fetch('/api/admin/docs/'+encodeURIComponent(docUser)); const items=r.ok?await r.json():[];
+  $('docAdminList').innerHTML=items.length?items.map(d=>`<div class="ov-item" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><a href="/api/docs/${encodeURIComponent(docUser)}/file/${d.id}" target="_blank" style="color:var(--cyan);font-weight:600;text-decoration:none">${esc(d.titel)}</a><span style="display:flex;gap:6px;align-items:center"><small>${fmtBytes(d.bytes)}</small><button class="btn-icon danger" onclick="deleteDoc('${d.id}')">🗑</button></span></div>`).join(''):'<div class="req-empty">Ingen filer endnu.</div>';
+}
+function fileToB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
+async function uploadDoc(){
+  const f=$('docFile').files[0]; if(!f){$('docMsg').textContent='Vælg en fil.';return;}
+  if(f.size>15e6){$('docMsg').textContent='Filen er for stor (maks 15 MB).';return;}
+  $('docMsg').textContent='Lægger op…';
+  const data=await fileToB64(f);
+  const r=await fetch('/api/admin/docs/'+encodeURIComponent(docUser),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:f.name,title:$('docFileTitle').value,data})});
+  const d=await r.json(); $('docMsg').textContent=r.ok?'Lagt op.':(d.error||'Fejl'); if(r.ok){$('docFile').value='';$('docFileTitle').value='';loadAdminDocs();}
+}
+async function deleteDoc(id){ if(!confirm('Slet filen?')) return; await fetch('/api/admin/docs/'+encodeURIComponent(docUser)+'/'+id,{method:'DELETE'}); loadAdminDocs(); }
+// ── Skift kodeord ─────────────────────────────────────────────────────────────
+async function changePassword(){
+  const m=$('pwChangeMsg'); m.style.color='';
+  const r=await fetch('/api/me/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old:$('pwOld').value,new:$('pwNew').value})});
+  const d=await r.json(); m.style.color=r.ok?'var(--green)':'var(--red)'; m.textContent=r.ok?'Kodeordet er skiftet.':(d.error||'Fejl');
+  if(r.ok){$('pwOld').value='';$('pwNew').value='';}
+}
+</script>
+</body>
+</html>
