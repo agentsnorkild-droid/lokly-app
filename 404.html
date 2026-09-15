@@ -870,6 +870,7 @@ function renderCustomers(custs){
       <div class="customer-actions">
         <button class="btn-icon" title="Se beskeder" style="font-size:12px;width:auto;padding:0 8px" onclick="openHistory('${esc(c.username)}','${esc(c.company)}')">Beskeder</button>
         <button class="btn-icon" title="Dokumenter" style="font-size:12px;width:auto;padding:0 8px" onclick="openDocs('${esc(c.username)}','${esc(c.company)}')">Filer</button>
+        <button class="btn-icon" title="Hændelser" style="font-size:12px;width:auto;padding:0 8px" onclick="openEvents('${esc(c.username)}','${esc(c.company)}')">Hændelser</button>
         <button class="btn-icon" title="Nulstil kode" onclick="resetPw('${esc(c.username)}','${esc(c.company)}')">🔑</button>
         <button class="btn-icon" title="Rediger" onclick='openEditModal(${JSON.stringify(c)})'>✏️</button>
         <button class="btn-icon danger" title="Slet" onclick="deleteCustomer('${esc(c.username)}','${esc(c.company)}')">🗑</button>
@@ -1073,6 +1074,14 @@ async function togglePush(){
   btn.disabled=false;
 }
 
+async function openEvents(username,company){
+  $('histTitle').textContent='Hændelser: '+company; $('histSub').textContent='Henter…'; $('histBody').innerHTML=''; $('histModal').classList.add('open');
+  try{const r=await fetch('/api/admin/events/'+encodeURIComponent(username)); const evs=await r.json();
+    const labels={henvendelse:'Henvendelse',opkald:'Opkald',tilbud:'Tilbud',booking:'Booking',opgave:'Opgave',lead:'Lead',andet:'Andet'};
+    $('histSub').textContent=evs.length?evs.length+' hændelser, nyeste øverst':'Ingen hændelser endnu. Kundens systemer sender dem med api-nøglen.';
+    $('histBody').innerHTML=evs.map(e=>`<div class="ov-item"><b>${labels[e.type]||e.type}</b>${e.text?': '+esc(e.text):''}<br><small>${fmtTs(e.ts)}${e.source?' · '+esc(e.source):''}</small></div>`).join('');
+  }catch(e){$('histSub').textContent='Kunne ikke hente.';}
+}
 async function openHistory(username,company){
   $('histTitle').textContent=company; $('histSub').textContent='Henter…'; $('histBody').innerHTML=''; $('histModal').classList.add('open');
   try{const r=await fetch('/api/admin/history/'+encodeURIComponent(username)); const msgs=await r.json();
