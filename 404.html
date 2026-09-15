@@ -506,17 +506,6 @@ async function enterApp(data){
     $('setCompanyRO').textContent=data.company;
     $('editEmail').value=data.email||''; $('editPhone').value=data.phone||'';
     $('editAddress').value=data.address||''; $('editHours').value=data.hours||'';
-    // Overblik stats
-    $('myMsgs').textContent=data.messages||0;
-    $('myStatus').textContent='Aktiv'; $('myStatus').style.color='var(--green)';
-    const planLabels={basic:'Basic',pro:'Pro',enterprise:'Enterprise'};
-    $('myPlan').textContent=planLabels[data.plan]||data.plan||'Basic';
-    $('myCompany').textContent=data.company;
-    $('myEmail').textContent=data.email||'Ikke angivet'; $('myEmail').style.color=data.email?'':'var(--text2)';
-    $('myPhone').textContent=data.phone||'Ikke angivet'; $('myPhone').style.color=data.phone?'':'var(--text2)';
-    $('myAddress').textContent=data.address||'Ikke angivet'; $('myAddress').style.color=data.address?'':'var(--text2)';
-    $('myHours').textContent=data.hours||'Ikke angivet'; $('myHours').style.color=data.hours?'':'var(--text2)';
-    $('myWebsite').textContent=data.website_url||'Ikke angivet'; $('myWebsite').style.color=data.website_url?'':'var(--text2)';
     initPushUI();
     const want=new URLSearchParams(location.search).get('tab');
     if(want&&tabMap[want]&&$('nav'+want)&&!$('nav'+want).hidden){switchTab(want,$('nav'+want));history.replaceState(null,'','/');await loadHistory();return;}
