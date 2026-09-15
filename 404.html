@@ -213,6 +213,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 .req-admin select,.req-admin input{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px}
 .req-admin button{padding:8px 12px;border-radius:8px;border:none;background:var(--cyan);color:#fff;font-size:13px;cursor:pointer}
 .req-empty{color:var(--text2);font-size:14px;text-align:center;padding:20px}
+.thread{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.tmsg{padding:8px 12px;border-radius:10px;font-size:14px;line-height:1.4;white-space:pre-wrap;max-width:92%}
+.tmsg small{display:block;font-size:11px;color:var(--text2);margin-bottom:2px}
+.tmsg.kunde{align-self:flex-start;background:var(--surface2)}
+.tmsg.alex{align-self:flex-end;background:var(--cyan);color:#fff}
+.tmsg.alex small{color:#d8ebe6}
+.draft{margin-top:10px;padding:10px 12px;border:1px dashed var(--orange);border-radius:10px;background:#fff8f0;font-size:14px;line-height:1.45;white-space:pre-wrap}
+.draft small{display:block;color:var(--orange);font-size:11px;margin-bottom:4px}
 .nav-badge{display:inline-block;min-width:18px;padding:1px 6px;border-radius:10px;background:var(--orange);color:#fff;font-size:11px;margin-left:4px}
 .req-pane .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .req-pane .stat-card{min-width:0;padding:14px 8px}
@@ -973,6 +981,8 @@ function reqCard(r,admin){
     ${r.svar?`<div class="req-svar">${esc(r.svar)}</div>`:''}
     ${(!admin&&r.status==='faerdig'&&r.godkendt!==true)?`<div class="req-admin"><button onclick="feedbackRequest(${r.id},true)">Godkend</button><button style="background:var(--surface);color:var(--cyan);border:1px solid var(--cyan)" onclick="feedbackRequest(${r.id},false)">Ikke helt</button></div>`:''}
     ${(r.status==='faerdig'&&r.godkendt===true)?`<div class="req-meta" style="color:var(--green)">Godkendt af jer</div>`:''}
+    ${(r.beskeder&&r.beskeder.length)?`<div class="thread">${r.beskeder.map(m=>`<div class="tmsg ${m.role}"><small>${m.role==='alex'?'Alex':(admin?esc(r.company):'Jer')} · ${fmtTs(m.ts)}</small>${esc(m.text)}</div>`).join('')}</div>`:''}
+    ${admin?`${r.udkast?`<div class="draft"><small>Snorkilds udkast til dit svar (kunden ser det ikke)</small><div id="dr${r.id}">${esc(r.udkast)}</div><div class="req-admin"><button onclick="sendThread(${r.id},$('dr${r.id}').innerText)">Send som det er</button><button style="background:var(--surface);color:var(--cyan);border:1px solid var(--cyan)" onclick="$('tx${r.id}').value=$('dr${r.id}').innerText;$('tx${r.id}').focus()">Ret</button><button style="background:var(--surface);color:var(--red);border:1px solid var(--red)" onclick="clearDraft(${r.id})">Slet</button></div></div>`:''}<div class="req-admin" style="flex-direction:column;align-items:stretch"><textarea id="tx${r.id}" rows="2" placeholder="Skriv til ${esc(r.company)}" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit"></textarea><button onclick="sendThread(${r.id},$('tx${r.id}').value)">Send til kunden</button></div>`:(r.status!=='afvist'?`<div class="req-admin" style="flex-direction:column;align-items:stretch"><textarea id="tx${r.id}" rows="2" placeholder="Svar eller tilføj til ønsket" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit"></textarea><button onclick="sendThread(${r.id},$('tx${r.id}').value)">Send</button></div>`:'')}
     <div class="req-meta">#${r.id} · sendt ${fmtTs(r.created)}${r.updated!==r.created?' · opdateret '+fmtTs(r.updated):''}</div>
     ${admin?adminActions(r):''}
   </div>`;
@@ -1018,6 +1028,15 @@ async function adminUpdateRequest(id){
   if(r.ok) loadAdminRequests(); else alert('Kunne ikke gemme');
 }
 
+async function sendThread(id,text){
+  text=(text||'').trim(); if(!text) return;
+  const r=await fetch('/api/requests/'+id+'/beskeder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  if(r.ok){ if(userData.is_admin) loadAdminRequests(); else loadRequests(); } else alert('Kunne ikke sende');
+}
+async function clearDraft(id){
+  const r=await fetch('/api/admin/requests/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({udkast:''})});
+  if(r.ok) loadAdminRequests();
+}
 async function feedbackRequest(id,ok){
   let comment='';
   if(!ok){comment=prompt('Hvad mangler, eller hvad er anderledes end forventet?')||'';}
