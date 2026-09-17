@@ -477,7 +477,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 <script>
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
-if(API){const _f=window.fetch.bind(window);window.fetch=(u,o={})=>{if(typeof u==='string'&&u.startsWith('/api/')){u=API+u;o=Object.assign({credentials:'include'},o);}return _f(u,o);};}
+if(API){const _f=window.fetch.bind(window);window.fetch=(u,o={})=>{if(typeof u==='string'&&u.startsWith('/api/')){u=API+u;o=Object.assign({credentials:'include'},o);let t='';try{t=localStorage.getItem('lokly_session')||'';}catch(e){}if(t){o.headers=Object.assign({},o.headers||{},{'X-Session':t});}}return _f(u,o);};}
 const $ = id => document.getElementById(id);
 let chatHistory = [], userData = {}, editingUsername = null;
 const tabMap = {Chat:'tabChat',Admin:'tabAdmin',Dashboard:'tabDashboard',Settings:'tabSettings',Requests:'tabRequests',Docs:'tabDocs'};
@@ -502,6 +502,7 @@ async function doLogin(){
   try{
     const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value,password:$('password').value})});
     const d=await r.json(); if(!r.ok) throw d.error;
+    if(d.token){try{localStorage.setItem('lokly_session',d.token);}catch(e){}}
     const me=await fetch('/api/me'); if(!me.ok) throw 'Session fejl';
     enterApp(await me.json());
   }catch(e){$('loginError').textContent=e||'Fejl ved login';}
@@ -545,7 +546,7 @@ async function enterApp(data){
 function setField(id,val){const el=$(id);if(val){el.textContent=val;el.classList.remove('empty');}else{el.textContent='Ikke angivet';el.classList.add('empty');}}
 
 async function doLogout(){
-  await fetch('/api/logout',{method:'POST'});
+  await fetch('/api/logout',{method:'POST'}); try{localStorage.removeItem('lokly_session');}catch(e){}
   chatHistory=[]; userData={};
   $('messages').innerHTML='';
   $('appScreen').style.display='none'; $('loginScreen').style.display='flex';
