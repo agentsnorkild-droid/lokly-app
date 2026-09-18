@@ -206,6 +206,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 .sys-actions a,.sys-actions button{flex:1;text-align:center;padding:9px 6px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid var(--cyan)}
 .sys-actions a{background:var(--surface);color:var(--cyan)}
 .sys-actions button{background:var(--cyan);color:#fff}
+.sys-actions button.fejl{background:var(--surface);color:var(--red);border-color:var(--red)}
 .sys-new{border:1px dashed var(--border);background:transparent;align-items:center;justify-content:center;text-align:center;color:var(--text2);cursor:pointer;min-height:96px}
 .sys-new b{color:var(--cyan)}
 .req-sys{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;border:1px solid var(--border);color:var(--text2);margin-left:6px;vertical-align:middle}
@@ -347,6 +348,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <div class="req-form">
         <h3>Bed om noget nyt, eller kontakt Alex</h3>
         <p>Skriv, hvad du vil have bygget eller ændret, eller hvad der driller. Alex får det med det samme, og du kan følge status her.</p>
+        <div class="form-field" style="margin:0"><label style="font-size:13px;color:var(--text2)">Hvad drejer det sig om?</label><select id="reqKind" onchange="reqSystemChanged()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px"><option value="oenske">Ændring eller nyt ønske</option><option value="fejl">Fejl: noget virker ikke</option></select></div>
+        <div id="reqKindHint" style="font-size:12px;color:var(--text2);margin:-4px 0 0" hidden>Fejl rettes med det samme, uden at vente på godkendelse. Du får besked, når den er rettet.</div>
         <div class="form-field" style="margin:0"><label style="font-size:13px;color:var(--text2)">Gælder</label><select id="reqSystem" onchange="reqSystemChanged()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px"><option value="">Noget nyt (ikke et bestemt system)</option></select></div>
         <textarea id="reqText" placeholder="Fx: Chatten skal kunne booke en besigtigelse. Eller: Telefonisten stillede ikke om i går kl. 15."></textarea>
         <div style="display:flex;align-items:center;gap:8px"><button onclick="$('reqFile').click()" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text2);cursor:pointer">Vedhæft billede</button><input type="file" id="reqFile" accept="image/*" multiple style="display:none" onchange="reqFiles(this.files)"><span id="reqFileInfo" style="font-size:12px;color:var(--text2)"></span></div>
@@ -991,12 +994,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeP
 
 // ── Ønsker & henvendelser ─────────────────────────────────────────────────────
 const REQ_LABEL={modtaget:'Venter',i_gang:'I gang',faerdig:'Færdig',afvist:'Afvist'};
-const REQ_KIND={oenske:'Ønske',kontakt:'Henvendelse'};
+const REQ_KIND={oenske:'Ønske',kontakt:'Henvendelse',fejl:'Fejl'};
+function reqStatusLabel(r){return (r.type==='fejl'&&r.status==='i_gang')?'Rettes nu':(REQ_LABEL[r.status]||r.status);}
 function fmtTs(t){const d=new Date(t*1000);return d.toLocaleDateString('da-DK',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});}
 function updateReqBadge(n){const b=$('reqBadge');b.textContent=n;b.hidden=!n;}
 function reqCard(r,admin){
   return `<div class="req-card">
-    <div class="req-top"><span class="req-kind">${REQ_KIND[r.type]||r.type}${admin?' · '+esc(r.company):''}${r.system?`<span class="req-sys">${esc(r.system)}</span>`:''}</span><span class="req-status ${r.status}">${REQ_LABEL[r.status]||r.status}</span></div>
+    <div class="req-top"><span class="req-kind"${r.type==='fejl'?' style="color:var(--red)"':''}>${REQ_KIND[r.type]||r.type}${admin?' · '+esc(r.company):''}${r.system?`<span class="req-sys">${esc(r.system)}</span>`:''}</span><span class="req-status ${r.status}">${reqStatusLabel(r)}</span></div>
     <div class="req-text">${esc(r.text)}</div>
     ${(r.files&&r.files.length)?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${r.files.map(i=>`<img src="${api(`/api/requests/${r.id}/file/${i}`)}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="openLightbox(this.src)">`).join('')}</div>`:''}
     ${(admin&&r.alex_note)?`<div class="req-svar" style="border-left-color:var(--orange)"><small style="color:var(--text2)">Din kommentar til agenten</small><br>${esc(r.alex_note)}</div>`:''}
@@ -1019,11 +1023,12 @@ let reqAttach=[];
 function reqFiles(list){reqAttach=[...reqAttach,...Array.from(list).filter(f=>f.type.startsWith('image/'))].slice(0,4);$('reqFileInfo').textContent=reqAttach.length?reqAttach.length+' billede(r) valgt':'';}
 async function sendRequest(type){
   const text=$('reqText').value.trim(); if(!text){$('reqMsg').style.color='var(--red)';$('reqMsg').textContent='Skriv en besked først.';return;}
+  if(type==='oenske'&&($('reqKind')||{}).value==='fejl') type='fejl';
   $('reqBtnOenske').disabled=true;$('reqBtnKontakt').disabled=true;$('reqMsg').textContent='';
   try{const files=reqAttach.length?await filesToBase64(reqAttach):[];
     const r=await fetch('/api/requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,text,files,system:($('reqSystem')||{}).value||''})});
     const d=await r.json(); if(!r.ok) throw d.error;
-    $('reqText').value='';reqAttach=[];$('reqFileInfo').textContent='';$('reqSystem').value='';reqSystemChanged();$('reqMsg').style.color='var(--green)';$('reqMsg').textContent=type==='kontakt'?'Sendt til Alex. Du hører fra ham.':'Ønsket er modtaget. Du kan følge status herunder.';
+    $('reqText').value='';reqAttach=[];$('reqFileInfo').textContent='';$('reqSystem').value='';if($('reqKind'))$('reqKind').value='oenske';reqSystemChanged();$('reqMsg').style.color='var(--green)';$('reqMsg').textContent=type==='kontakt'?'Sendt til Alex. Du hører fra ham.':(type==='fejl'?'Fejlen er meldt. Vi retter den nu, og du får besked når den er rettet.':'Ønsket er modtaget. Du kan følge status herunder.');
     loadRequests();
   }catch(e){$('reqMsg').style.color='var(--red)';$('reqMsg').textContent=e||'Kunne ikke sende. Prøv igen.';}
   $('reqBtnOenske').disabled=false;$('reqBtnKontakt').disabled=false;
@@ -1069,10 +1074,12 @@ async function feedbackRequest(id,ok){
 let SYSTEMS=[];
 function fillReqSystem(){const sel=$('reqSystem');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">Noget nyt (ikke et bestemt system)</option>'+SYSTEMS.map(l=>`<option value="${esc(l.navn)}">Ændring til: ${esc(l.navn)}</option>`).join('');if([...sel.options].some(x=>x.value===cur))sel.value=cur;}
 function reqSystemChanged(){const v=($('reqSystem')||{}).value||'';const t=$('reqText');if(!t)return;
+  const fejl=($('reqKind')||{}).value==='fejl'; if($('reqKindHint'))$('reqKindHint').hidden=!fejl;
+  if(fejl){t.placeholder=v?`Hvad virker ikke i ${v}, og hvornår skete det? Fx: siden viser en fejl når man vælger tirsdag.`:'Hvad virker ikke, og hvornår skete det? Fx: Telefonisten stillede ikke om i går kl. 15.';$('reqBtnOenske').textContent='Meld fejl';return;}
   t.placeholder=v?`Hvad skal ændres i ${v}? Fx: knappen "Book tid" skal også sende en sms. Eller: teksten på forsiden skal opdateres.`:'Fx: Chatten skal kunne booke en besigtigelse. Eller: Telefonisten stillede ikke om i går kl. 15.';
   $('reqBtnOenske').textContent=v?'Send ændring':'Send ønske';}
-async function startRequest(system){switchTab('Requests',$('navRequests'));if(!SYSTEMS.length){try{const r=await fetch('/api/overview');if(r.ok){const o=await r.json();SYSTEMS=o.links.map(l=>({navn:l.navn||l.url,url:l.url}));}}catch(e){}}
-  fillReqSystem();$('reqSystem').value=system||'';reqSystemChanged();setTimeout(()=>$('reqText').focus(),50);}
+async function startRequest(system,kind){switchTab('Requests',$('navRequests'));if(!SYSTEMS.length){try{const r=await fetch('/api/overview');if(r.ok){const o=await r.json();SYSTEMS=o.links.map(l=>({navn:l.navn||l.url,url:l.url}));}}catch(e){}}
+  fillReqSystem();$('reqSystem').value=system||'';if($('reqKind'))$('reqKind').value=(kind==='fejl'?'fejl':'oenske');reqSystemChanged();setTimeout(()=>$('reqText').focus(),50);}
 // ── Overblik ──────────────────────────────────────────────────────────────────
 async function loadOverview(){
   try{const r=await fetch('/api/overview');if(!r.ok)return;const o=await r.json();
@@ -1081,7 +1088,7 @@ async function loadOverview(){
     SYSTEMS=o.links.map(l=>({navn:l.navn||l.url,url:l.url}));fillReqSystem();
     const openBy=n=>o.open.filter(r=>(r.system||'')===n).length, doneBy=n=>o.done.filter(r=>(r.system||'')===n).length;
     $('ovLinks').innerHTML=SYSTEMS.map((l,i)=>{const n=openBy(l.navn),d=doneBy(l.navn);let host='';try{host=new URL(l.url).host}catch(e){host=l.url}
-      return `<div class="sys-card"><h4>${esc(l.navn)}</h4><div class="sys-url">${esc(host)}</div><span class="sys-chip ${n?'open':''}">${n?n+' ændring'+(n>1?'er':'')+' i gang':(d?d+' ændring'+(d>1?'er':'')+' leveret':'Kører')}</span><div class="sys-actions"><a href="${esc(l.url)}" target="_blank" rel="noopener">Åbn</a><button onclick="startRequest(SYSTEMS[${i}].navn)">Anmod om ændring</button></div></div>`;}).join('')
+      return `<div class="sys-card"><h4>${esc(l.navn)}</h4><div class="sys-url">${esc(host)}</div><span class="sys-chip ${n?'open':''}">${n?n+' ændring'+(n>1?'er':'')+' i gang':(d?d+' ændring'+(d>1?'er':'')+' leveret':'Kører')}</span><div class="sys-actions"><a href="${esc(l.url)}" target="_blank" rel="noopener">Åbn</a><button onclick="startRequest(SYSTEMS[${i}].navn)">Anmod om ændring</button><button class="fejl" onclick="startRequest(SYSTEMS[${i}].navn,'fejl')">Meld fejl</button></div></div>`;}).join('')
       +`<div class="sys-card sys-new" onclick="startRequest('')"><div><b>+ Nyt system eller service</b><br><small>Fx en booking-side, en telefonist eller en app. Beskriv det, så vender Alex tilbage.</small></div></div>`;
     const lev=[...o.done.map(d=>`<div class="ov-item">${esc(d.svar||d.text)}<br><small>Ønske #${d.id} · færdigt ${fmtTs(d.updated)}</small></div>`),...o.leverancer.map(l=>`<div class="ov-item">${esc(l)}</div>`)];
     $('ovLeverancer').innerHTML=lev.length?lev.join(''):'<div class="req-empty">Intet endnu. Det første, vi bygger, dukker op her.</div>';
