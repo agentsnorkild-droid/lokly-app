@@ -334,8 +334,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <div class="req-form" id="ovLinksBox"><h3>Dine systemer</h3><p>Det, der kører for jer. Tryk <b>Anmod om ændring</b> på et system, eller bed om noget helt nyt.</p><div class="sys-grid" id="ovLinks"></div></div>
       <div class="req-form" id="ovOnbBox" hidden><h3>Sådan kommer I i gang</h3><div class="req-list" id="ovOnb"></div></div>
       <div class="req-form" id="ovUgeBox">
-        <h3>Det har din assistent gjort de sidste 7 dage</h3>
-        <div class="stats-row" style="margin-top:6px"><div class="stat-card"><div class="stat-num" id="ugHenv">0</div><div class="stat-label">Henvendelser</div></div><div class="stat-card"><div class="stat-num" id="ugOpk">0</div><div class="stat-label">Opkald taget</div></div><div class="stat-card"><div class="stat-num" id="ugTilb">0</div><div class="stat-label">Tilbud sendt</div></div></div>
+        <h3>Det er sket i jeres systemer de sidste 7 dage</h3>
+        <div class="stats-row" id="ugStats" style="margin-top:6px"></div>
         <p id="ugSum" style="margin-top:8px"></p>
         <div class="req-list" id="ovTidslinje" style="margin-top:8px"></div>
       </div>
@@ -1157,7 +1157,9 @@ async function loadOverview(){
     $('ovAftaleBox').hidden=!o.aftale;$('ovAftale').textContent=o.aftale||'';
     $('ovOnbBox').hidden=!(o.onboarding&&o.onboarding.length);
     $('ovOnb').innerHTML=(o.onboarding||[]).map(x=>`<div class="ov-item" style="display:flex;gap:10px;align-items:center${x.done?';color:var(--text2)':''}"><span style="width:20px;height:20px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;${x.done?'background:var(--cyan);color:#fff':'border:2px solid var(--border)'}">${x.done?'✓':''}</span><span style="${x.done?'text-decoration:line-through':''}">${esc(x.text)}</span></div>`).join('');
-    const t=o.uge.typer||{};$('ugHenv').textContent=(t.henvendelse||0)+(t.lead||0);$('ugOpk').textContent=t.opkald||0;$('ugTilb').textContent=t.tilbud||0;
+    const t=o.uge.typer||{};const kort={henvendelse:'Henvendelser',lead:'Nye leads',opkald:'Opkald taget',tilbud:'Tilbud sendt',booking:'Bookinger',opgave:'Opgaver',lager:'Lager-registreringer',andet:'Andet'};
+    const top=Object.entries(t).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    $('ugStats').innerHTML=top.map(([k,n])=>`<div class="stat-card"><div class="stat-num">${n}</div><div class="stat-label">${esc(kort[k]||k)}</div></div>`).join('');$('ugStats').hidden=!top.length;
     let sum=o.uge.antal?`<b>${o.uge.antal}</b> hændelser denne uge, <b>${o.total.antal}</b> siden start.`:'Ingen hændelser endnu. Når jeres systemer er i drift, står her, hvad assistenten har gjort.';
     $('ugSum').innerHTML=sum;
     $('ovTidslinje').innerHTML=(o.tidslinje||[]).slice(0,12).map(e=>`<div class="ov-item"><b>${esc(o.event_labels[e.type]||e.type)}</b>${e.text?': '+esc(e.text):''}<br><small>${fmtTs(e.ts)}${e.source?' · '+esc(e.source):''}</small></div>`).join('');
@@ -1199,7 +1201,7 @@ async function togglePush(){
 async function openEvents(username,company){
   $('histTitle').textContent='Hændelser: '+company; $('histSub').textContent='Henter…'; $('histBody').innerHTML=''; $('histModal').classList.add('open');
   try{const r=await fetch('/api/admin/events/'+encodeURIComponent(username)); const evs=await r.json();
-    const labels={henvendelse:'Henvendelse',opkald:'Opkald',tilbud:'Tilbud',booking:'Booking',opgave:'Opgave',lead:'Lead',andet:'Andet'};
+    const labels={henvendelse:'Henvendelse',opkald:'Opkald',tilbud:'Tilbud',booking:'Booking',opgave:'Opgave',lead:'Lead',lager:'Lager',andet:'Andet'};
     $('histSub').textContent=evs.length?evs.length+' hændelser, nyeste øverst':'Ingen hændelser endnu. Kundens systemer sender dem med api-nøglen.';
     $('histBody').innerHTML=evs.map(e=>`<div class="ov-item"><b>${labels[e.type]||e.type}</b>${e.text?': '+esc(e.text):''}<br><small>${fmtTs(e.ts)}${e.source?' · '+esc(e.source):''}</small></div>`).join('');
   }catch(e){$('histSub').textContent='Kunne ikke hente.';}
