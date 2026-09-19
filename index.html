@@ -223,6 +223,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 .req-actions .secondary{background:var(--surface);color:var(--cyan)}
 .req-actions button:disabled{opacity:.5}
 .req-list{display:flex;flex-direction:column;gap:10px}
+.req-text.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.adm-note{font-size:12.5px;color:var(--text2);margin-top:8px;border-left:3px solid var(--orange);padding:3px 10px;line-height:1.4}
+.adm-svar{margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:8px;font-size:13.5px;line-height:1.45;white-space:pre-wrap}.adm-svar b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);margin-bottom:2px}
+.adm-thread{margin-top:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.adm-thread-h{width:100%;display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--surface2);border:none;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit}.adm-thread-h span{color:var(--cyan);font-weight:600}
+.adm-last{font-size:12.5px;color:var(--text2);padding:6px 12px;border-top:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-thread-b{padding:10px 12px;border-top:1px solid var(--border)}.adm-thread-b .thread{margin-top:0}.adm-thread-b .req-admin{margin-top:8px}
+.req-card.adm .req-top{margin-bottom:8px}.req-card.adm .req-kind{text-transform:none;letter-spacing:0;font-size:12.5px}
 .req-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
 .req-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
 .req-kind{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
@@ -1010,7 +1018,29 @@ const REQ_KIND={oenske:'Ønske',kontakt:'Henvendelse',fejl:'Fejl'};
 function reqStatusLabel(r){return (r.type==='fejl'&&r.status==='i_gang')?'Rettes nu':(REQ_LABEL[r.status]||r.status);}
 function fmtTs(t){const d=new Date(t*1000);return d.toLocaleDateString('da-DK',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});}
 function updateReqBadge(n){const b=$('reqBadge');b.textContent=n;b.hidden=!n;}
+const reqOpen=new Set();
+function toggleThread(id){reqOpen.has(id)?reqOpen.delete(id):reqOpen.add(id);renderCustomerRequests();}
+function reqCardAdmin(r){
+  const msgs=r.beskeder||[], n=msgs.length, last=n?msgs[n-1]:null, open=reqOpen.has(r.id)||(!n&&r.status==='modtaget');
+  const who=m=>m.role==='alex'?'Alex':esc(r.company);
+  const reply=r.status!=='afvist'?`<div class="req-admin" style="flex-direction:column;align-items:stretch"><textarea id="tx${r.id}" rows="2" placeholder="Skriv til ${esc(r.company)}" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit"></textarea><button onclick="sendThread(${r.id},$('tx${r.id}').value)">Send til kunden</button></div>`:'';
+  const draft=r.udkast?`<div class="draft"><small>Snorkilds udkast til dit svar (kunden ser det ikke)</small><div id="dr${r.id}">${esc(r.udkast)}</div><div class="req-admin"><button onclick="sendThread(${r.id},$('dr${r.id}').innerText)">Send som det er</button><button style="background:var(--surface);color:var(--cyan);border:1px solid var(--cyan)" onclick="$('tx${r.id}').value=$('dr${r.id}').innerText;$('tx${r.id}').focus()">Ret</button><button style="background:var(--surface);color:var(--red);border:1px solid var(--red)" onclick="clearDraft(${r.id})">Slet</button></div></div>`:'';
+  return `<div class="req-card adm">
+    <div class="req-top"><span class="req-status ${r.status}">${reqStatusLabel(r)}</span><span class="req-kind"${r.type==='fejl'?' style="color:var(--red)"':''}>${REQ_KIND[r.type]||r.type}${r.system?' · '+esc(r.system):''} · #${r.id} · ${fmtTs(r.created)}</span></div>
+    <div class="req-text ${r.text.length>160?'clamp':''}" onclick="this.classList.toggle('clamp')" title="Tryk for at folde ud">${esc(r.text)}</div>
+    ${(r.files&&r.files.length)?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${r.files.map(i=>`<img src="${api(`/api/requests/${r.id}/file/${i}`)}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="openLightbox(this.src)">`).join('')}</div>`:''}
+    ${r.alex_note?`<div class="adm-note">Din note til agenten: ${esc(r.alex_note)}</div>`:''}
+    ${(r.svar&&(r.status==='faerdig'||r.status==='afvist'))?`<div class="adm-svar"><b>Status til kunden</b>${esc(r.svar)}</div>`:''}
+    ${(r.status==='faerdig'&&r.godkendt===true)?`<div class="req-meta" style="color:var(--green)">Godkendt af kunden</div>`:''}
+    <div class="adm-thread"><button class="adm-thread-h" onclick="toggleThread(${r.id})">Tråd med ${esc(r.company)} (${n})<span>${open?'Skjul':'Vis'}</span></button>
+      ${(!open&&last)?`<div class="adm-last">${who(last)}: ${esc(last.text)}</div>`:''}
+      <div class="adm-thread-b" ${open?'':'hidden'}>${n?`<div class="thread">${msgs.map(m=>`<div class="tmsg ${m.role}"><small>${who(m)} · ${fmtTs(m.ts)}</small>${esc(m.text)}</div>`).join('')}</div>`:'<div class="req-meta" style="margin:0 0 6px">Ingen beskeder endnu. Mangler du noget fra kunden, så skriv det her.</div>'}${draft}${reply}</div>
+    </div>
+    ${adminActions(r)}
+  </div>`;
+}
 function reqCard(r,admin){
+  if(admin) return reqCardAdmin(r);
   return `<div class="req-card">
     <div class="req-top"><span class="req-kind"${r.type==='fejl'?' style="color:var(--red)"':''}>${REQ_KIND[r.type]||r.type}${admin?' · '+esc(r.company):''}${r.system?`<span class="req-sys">${esc(r.system)}</span>`:''}</span><span class="req-status ${r.status}">${reqStatusLabel(r)}</span></div>
     <div class="req-text">${esc(r.text)}</div>
@@ -1071,8 +1101,8 @@ function openCustomer(username,company){
 }
 function closeCustomer(){custOpen=null;$('custModal').classList.remove('open');loadAdminData();}
 function adminActions(r){
-  if(r.status==='modtaget') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><input id="rn${r.id}" placeholder="Kommentar til agenten (kunden ser den ikke)" value="${esc(r.alex_note||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'i_gang')">Godkend og sæt i gang</button><button style="background:var(--surface);color:var(--red);border:1px solid var(--red)" onclick="adminSet(${r.id},'afvist')">Afvis</button></div></div>`;
-  if(r.status==='i_gang') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><input id="rv${r.id}" placeholder="Hvad er bygget? (vises til kunden)" value="${esc(r.svar||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'faerdig')">Sæt til færdig</button><button style="background:var(--surface);color:var(--text2);border:1px solid var(--border)" onclick="adminSet(${r.id},'modtaget')">Tilbage til venter</button></div></div>`;
+  if(r.status==='modtaget') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><small class="req-meta" style="margin:0 0 -4px">Note til agenten (kunden ser den ikke)</small><input id="rn${r.id}" placeholder="Fx: hold det simpelt, brug det vi har" value="${esc(r.alex_note||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'i_gang')">Godkend og sæt i gang</button><button style="background:var(--surface);color:var(--red);border:1px solid var(--red)" onclick="adminSet(${r.id},'afvist')">Afvis</button></div></div>`;
+  if(r.status==='i_gang') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><small class="req-meta" style="margin:0 0 -4px">Status til kunden (vises i appen)</small><input id="rv${r.id}" placeholder="Hvad er bygget? (vises til kunden)" value="${esc(r.svar||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'faerdig')">Sæt til færdig</button><button style="background:var(--surface);color:var(--text2);border:1px solid var(--border)" onclick="adminSet(${r.id},'modtaget')">Tilbage til venter</button></div></div>`;
   return `<div class="req-admin"><button style="background:var(--surface);color:var(--cyan);border:1px solid var(--cyan)" onclick="adminSet(${r.id},'i_gang')">Genåbn</button></div>`;
 }
 async function adminSet(id,status){
