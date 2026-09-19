@@ -315,8 +315,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <div class="customer-list" id="customerList">
         <div style="color:var(--text2);font-size:14px;text-align:center;padding:20px">Henter…</div>
       </div>
-      <div class="admin-section-header" style="margin-top:20px"><h3>Ønsker og henvendelser</h3></div>
-      <div class="req-list" id="adminReqList"><div class="req-empty">Henter…</div></div>
     </div>
 
     <div class="tab-pane req-pane" id="tabDashboard">
@@ -456,6 +454,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
     <p class="modal-sub" id="histSub"></p>
     <div id="histBody" style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 0"></div>
     <div class="modal-actions"><button class="btn-primary" onclick="$('histModal').classList.remove('open')">Luk</button></div>
+  </div>
+</div>
+
+<!-- Modal: Kunde (admin) -->
+<div class="modal-overlay" id="custModal" onclick="if(event.target===this)closeCustomer()">
+  <div class="modal" style="max-height:88vh;display:flex;flex-direction:column">
+    <h2 id="custTitle">Kunde</h2>
+    <p class="modal-sub" id="custSub"></p>
+    <div class="customer-actions" id="custActions" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+    <div class="admin-section-header"><h3 style="margin:0">Ønsker og henvendelser</h3></div>
+    <div class="req-list" id="custReqList" style="overflow-y:auto;flex:1;padding:4px 0"><div class="req-empty">Henter…</div></div>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeCustomer()">Luk</button></div>
   </div>
 </div>
 
@@ -884,7 +894,7 @@ async function newChat(){
 // ── Admin ─────────────────────────────────────────────────────────────────────
 async function loadAdminData(){
   try{
-    loadAdminRequests();
+    await loadAdminRequests();
     const [sr,cr]=await Promise.all([fetch('/api/admin/stats'),fetch('/api/admin/customers')]);
     const stats=await sr.json(), custs=await cr.json();
     $('statTotal').textContent=stats.total;
@@ -898,13 +908,15 @@ function renderCustomers(custs){
   if(!custs.length){$('customerList').innerHTML='<div style="color:var(--text2);font-size:14px;text-align:center;padding:30px">Ingen kunder endnu — tilføj din første 👆</div>';return;}
   $('customerList').innerHTML=custs.map(c=>{
     const ini=c.company.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    const meta=[c.email,c.phone].filter(Boolean).join(' · ')||(c.messages?`${c.messages} beskeder`:'Ingen aktivitet');
+    const mine=adminReqItems.filter(r=>r.username===c.username);
+    const openN=mine.filter(r=>r.status==='modtaget'||r.status==='i_gang').length;
+    const meta=(openN?(openN===1?'1 åbent ønske':`${openN} åbne ønsker`):(mine.length?'Ingen åbne ønsker':'Ingen ønsker endnu'))+(c.messages?` · ${c.messages} beskeder`:'');
     const pLabel={basic:'Basic',pro:'Pro',enterprise:'Enterprise'}[c.plan]||c.plan;
-    return `<div class="customer-card">
+    return `<div class="customer-card" style="cursor:pointer" onclick="openCustomer('${esc(c.username)}','${esc(c.company)}')">
       <div class="customer-avatar">${ini}</div>
       <div class="customer-info"><div class="co">${esc(c.company)}</div><div class="meta">${esc(meta)}</div></div>
       <span class="customer-plan plan-${c.plan||'basic'}">${pLabel}</span>
-      <div class="customer-actions">
+      <div class="customer-actions" onclick="event.stopPropagation()">
         <button class="btn-icon" title="Se beskeder" style="font-size:12px;width:auto;padding:0 8px" onclick="openHistory('${esc(c.username)}','${esc(c.company)}')">Beskeder</button>
         <button class="btn-icon" title="Dokumenter" style="font-size:12px;width:auto;padding:0 8px" onclick="openDocs('${esc(c.username)}','${esc(c.company)}')">Filer</button>
         <button class="btn-icon" title="Hændelser" style="font-size:12px;width:auto;padding:0 8px" onclick="openEvents('${esc(c.username)}','${esc(c.company)}')">Hændelser</button>
@@ -1033,11 +1045,31 @@ async function sendRequest(type){
   }catch(e){$('reqMsg').style.color='var(--red)';$('reqMsg').textContent=e||'Kunne ikke sende. Prøv igen.';}
   $('reqBtnOenske').disabled=false;$('reqBtnKontakt').disabled=false;
 }
+let adminReqItems=[], custOpen=null;
 async function loadAdminRequests(){
-  try{const r=await fetch('/api/requests');if(!r.ok)return;const items=await r.json();
-    $('adminReqList').innerHTML=items.length?items.map(x=>reqCard(x,true)).join(''):'<div class="req-empty">Ingen ønsker endnu.</div>';
+  try{const r=await fetch('/api/requests');if(!r.ok)return;adminReqItems=await r.json();
+    if(custOpen) renderCustomerRequests();
   }catch(e){}
 }
+function renderCustomerRequests(){
+  if(!custOpen) return;
+  const items=adminReqItems.filter(x=>x.username===custOpen.username);
+  $('custReqList').innerHTML=items.length?items.map(x=>reqCard(x,true)).join(''):'<div class="req-empty">Ingen ønsker fra denne kunde endnu.</div>';
+  const openN=items.filter(x=>x.status==='modtaget'||x.status==='i_gang').length;
+  $('custSub').textContent=(openN?(openN===1?'1 åbent':`${openN} åbne`):'Ingen åbne')+' · '+items.length+' i alt';
+}
+function openCustomer(username,company){
+  custOpen={username,company};
+  $('custTitle').textContent=company;
+  const u=esc(username), c=esc(company);
+  $('custActions').innerHTML=`<button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openHistory('${u}','${c}')">Beskeder</button>
+    <button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openDocs('${u}','${c}')">Filer</button>
+    <button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openEvents('${u}','${c}')">Hændelser</button>`;
+  $('custModal').classList.add('open');
+  renderCustomerRequests();
+  loadAdminRequests();
+}
+function closeCustomer(){custOpen=null;$('custModal').classList.remove('open');loadAdminData();}
 function adminActions(r){
   if(r.status==='modtaget') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><input id="rn${r.id}" placeholder="Kommentar til agenten (kunden ser den ikke)" value="${esc(r.alex_note||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'i_gang')">Godkend og sæt i gang</button><button style="background:var(--surface);color:var(--red);border:1px solid var(--red)" onclick="adminSet(${r.id},'afvist')">Afvis</button></div></div>`;
   if(r.status==='i_gang') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><input id="rv${r.id}" placeholder="Hvad er bygget? (vises til kunden)" value="${esc(r.svar||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'faerdig')">Sæt til færdig</button><button style="background:var(--surface);color:var(--text2);border:1px solid var(--border)" onclick="adminSet(${r.id},'modtaget')">Tilbage til venter</button></div></div>`;
