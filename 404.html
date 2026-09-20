@@ -449,6 +449,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <div class="form-field"><label>Opstartspris (kr. ekskl. moms)</label>
         <input id="fOpstart" inputmode="numeric" placeholder="5000" maxlength="9"></div>
       <div class="form-field"><label>Startdato</label><input id="fStart" placeholder="2026-10-01" maxlength="20"></div>
+      <label style="display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="fBetaler" style="width:18px;height:18px"> Betaler (fjern flueben for prøvekunde)</label>
       <div class="form-field"><label>Intern note (kunden ser den aldrig)</label>
         <input id="fNote" placeholder="Første kunde, vennepris" maxlength="300">
       </div>
@@ -554,7 +555,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20260920-1648';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20260920-1654';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -1095,7 +1096,9 @@ async function loadAdminData(){
     const stats=await sr.json(), custs=await cr.json();
     $('statActive').textContent=stats.active;
     $('statMrr').textContent=(stats.mrr||0).toLocaleString('da-DK');
-    if(stats.opstart){$('statMrr').nextElementSibling.textContent='Kr./md · '+stats.opstart.toLocaleString('da-DK')+' i opstart';}
+    const u=[]; if(stats.opstart) u.push(stats.opstart.toLocaleString('da-DK')+' i opstart');
+    if(stats.proeve) u.push(stats.proeve+' på prøve ('+(stats.proeve_vaerdi||0).toLocaleString('da-DK')+')');
+    $('statMrr').nextElementSibling.textContent = u.length ? 'Kr./md · '+u.join(' · ') : 'Kr./md';
     $('statMsgs').textContent=stats.messages;
     renderCustomers(custs);
     loadCrm(); loadPriser();
@@ -1113,11 +1116,12 @@ function renderCustomers(custs){
     const pLabel={basic:'Basic',pro:'Pro',enterprise:'Enterprise'}[c.plan]||c.plan;
     const kr=n=>Number(String(n).replace(/\./g,'').replace(',','.')||0).toLocaleString('da-DK');
     const dele=[];
-    if(c.maaned_pris) dele.push(`${kr(c.maaned_pris)} kr./md`);
+    if(c.maaned_pris) dele.push(c.betaler===false?`${kr(c.maaned_pris)} kr./md når de siger ja`:`${kr(c.maaned_pris)} kr./md`);
     if(c.opstart_pris) dele.push(`${kr(c.opstart_pris)} kr. opstart`);
     if(c.startdato) dele.push(`fra ${esc(c.startdato)}`);
     if(c.kontakt) dele.push(esc(c.kontakt));
-    const aftale=dele.length?`<div class="meta aftale" style="color:var(--cyan);font-weight:600">${dele.join(' · ')}</div>`:
+    if(c.betaler===false) dele.unshift('PRØVE');
+    const aftale=dele.length?`<div class="meta aftale" style="color:${c.betaler===false?'var(--orange)':'var(--cyan)'};font-weight:600">${dele.join(' · ')}</div>`:
       `<div class="meta" style="color:var(--orange)">Ingen pris sat</div>`;
     return `<div class="customer-card" style="cursor:pointer" onclick="openCustomer('${esc(c.username)}','${esc(c.company)}')">
       <div class="customer-avatar">${ini}</div>
@@ -1147,7 +1151,7 @@ function openAddModal(){
 }
 
 function openEditModal(c){
-  $('fOnb').value=c.onboarding||'';$('fForslag').value=c.forslag||'';$('fApiKey').value=c.api_key||'';$('fPris').value=c.maaned_pris||'';$('fOpstart').value=c.opstart_pris||'';$('fKontakt').value=c.kontakt||'';$('fStart').value=c.startdato||'';$('fNote').value=c.intern_note||'';$('fChatUrl').value=c.chat_url||'';$('fLinks').value=c.links||'';$('fLeverancer').value=c.leverancer||'';$('fMoede').value=c.naeste_moede||'';$('fAftale').value=c.aftale||'';
+  $('fOnb').value=c.onboarding||'';$('fForslag').value=c.forslag||'';$('fApiKey').value=c.api_key||'';$('fPris').value=c.maaned_pris||'';$('fOpstart').value=c.opstart_pris||'';$('fKontakt').value=c.kontakt||'';$('fStart').value=c.startdato||'';$('fBetaler').checked=c.betaler!==false;$('fNote').value=c.intern_note||'';$('fChatUrl').value=c.chat_url||'';$('fLinks').value=c.links||'';$('fLeverancer').value=c.leverancer||'';$('fMoede').value=c.naeste_moede||'';$('fAftale').value=c.aftale||'';
   editingUsername=c.username;
   $('modalTitle').textContent='Rediger'; $('modalSub').textContent=c.company;
   $('modalSaveBtn').textContent='Gem'; $('fUsername').value=c.username; $('fUsername').disabled=true;
@@ -1165,7 +1169,7 @@ async function saveCustomer(){
     const body={company:$('fCompany').value.trim(),username:$('fUsername').value.trim().toLowerCase(),
       email:$('fEmail').value.trim(),phone:$('fPhone').value.trim(),agent_id:$('fAgentId').value.trim(),
       session_key:$('fSessionKey').value.trim(),website_url:$('fWebsite').value.trim(),
-      address:$('fAddress').value.trim(),hours:$('fHours').value.trim(),plan:$('fPlan').value,maaned_pris:$('fPris').value.trim(),opstart_pris:$('fOpstart').value.trim(),kontakt:$('fKontakt').value.trim(),startdato:$('fStart').value.trim(),intern_note:$('fNote').value.trim(),chat_url:$('fChatUrl').value,forslag:$('fForslag').value,onboarding:$('fOnb').value,links:$('fLinks').value,leverancer:$('fLeverancer').value,naeste_moede:$('fMoede').value,aftale:$('fAftale').value};
+      address:$('fAddress').value.trim(),hours:$('fHours').value.trim(),plan:$('fPlan').value,maaned_pris:$('fPris').value.trim(),opstart_pris:$('fOpstart').value.trim(),kontakt:$('fKontakt').value.trim(),startdato:$('fStart').value.trim(),betaler:$('fBetaler').checked,intern_note:$('fNote').value.trim(),chat_url:$('fChatUrl').value,forslag:$('fForslag').value,onboarding:$('fOnb').value,links:$('fLinks').value,leverancer:$('fLeverancer').value,naeste_moede:$('fMoede').value,aftale:$('fAftale').value};
     if(editingUsername){
       const r=await fetch(`/api/admin/customers/${encodeURIComponent(editingUsername)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       const d=await r.json(); if(!r.ok) throw d.error;
