@@ -287,7 +287,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <button class="btn-new-chat" id="btnNewChat" onclick="newChat()" title="Ny chat">＋</button>
     </div>
   </div>
-  <div class="tab-content">
+  <div id="nyVersion" onclick="location.reload(true)" style="display:none;position:fixed;top:0;left:0;right:0;z-index:200;background:var(--cyan);color:#fff;padding:10px 14px;font-size:14px;font-weight:600;text-align:center;cursor:pointer">Ny version klar — tryk her for at opdatere</div>
+<div class="tab-content">
 
     <div class="tab-pane active" id="tabChat">
       <div class="search-bar" id="searchBar">
@@ -538,6 +539,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
+const APP_V='20260920-0832';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -620,6 +622,21 @@ async function enterApp(data){
     $('input').focus();
   }
 }
+
+// Appen kører som ikon på hjemmeskærmen og genindlæses derfor sjældent af sig selv.
+// Derfor spørger den serveren, om der er en nyere udgave, og siger til i stedet for
+// at kunden skal kende til hard refresh.
+async function tjekVersion(){
+  try{
+    const r=await fetch('/api/version',{cache:'no-store'});
+    if(!r.ok) return;
+    const d=await r.json();
+    if(d.v && APP_V && d.v!==APP_V) $('nyVersion').style.display='block';
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden) tjekVersion();});
+setInterval(tjekVersion, 10*60*1000);
+setTimeout(tjekVersion, 4000);
 
 function setField(id,val){const el=$(id);if(val){el.textContent=val;el.classList.remove('empty');}else{el.textContent='Ikke angivet';el.classList.add('empty');}}
 
