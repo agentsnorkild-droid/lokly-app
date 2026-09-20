@@ -338,7 +338,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
         <input id="crmSoeg" placeholder="Søg i navn, by, telefon, noter" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;margin-bottom:8px" oninput="crmSoegSenere()">
         <p id="crmSum" style="font-size:13px;color:var(--text2)">Henter…</p>
         <div class="req-list" id="crmNaeste"></div>
-        <a class="ov-link" href="https://crm.snorkild.cc" target="_blank" rel="noopener" style="margin-top:10px;display:block">Åbn hele CRM'et</a>
       </div>
     </div>
 
@@ -555,7 +554,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20260920-1100';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20260920-1319';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
