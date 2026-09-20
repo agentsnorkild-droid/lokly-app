@@ -391,13 +391,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
         <button class="btn-primary" style="width:100%;margin-top:8px" onclick="saveMySettings()">Gem indstillinger</button>
         <div id="settingsSaved" style="color:var(--green);font-size:13px;text-align:center;margin-top:10px;min-height:20px"></div>
       </div>
-      <div class="push-box" id="testChatBox" style="margin-top:16px" hidden><b>Test jeres kundechat</b>
-        <p>Det her er den chat, jeres kunder møder på hjemmesiden. Prøv den, og skriv et ønske, hvis den skal svare anderledes.</p>
-        <div id="testChatMsgs" style="max-height:260px;overflow-y:auto;margin:10px 0;display:none;flex-direction:column;gap:8px"></div>
-        <div class="form-field" style="margin:0"><input id="testChatInput" placeholder="Skriv som en kunde ville" maxlength="500" onkeydown="if(event.key==='Enter'){event.preventDefault();sendTestChat();}"></div>
-        <button class="btn-primary" style="width:100%" id="testChatBtn" onclick="sendTestChat()">Send som kunde</button>
-        <div id="testChatErr" style="font-size:13px;margin-top:8px;min-height:18px;color:var(--red)"></div>
-      </div>
       <div class="push-box" id="pwBox" style="margin-top:16px"><b>Skift kodeord</b><p>Mindst 8 tegn.</p>
         <div class="form-field"><input id="pwOld" type="password" placeholder="Nuværende kodeord" autocomplete="current-password"></div>
         <div class="form-field"><input id="pwNew" type="password" placeholder="Nyt kodeord" autocomplete="new-password"></div>
@@ -436,7 +429,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       </div>
     </div>
     <div class="form-field"><label>Session Key</label><input id="fSessionKey" placeholder="lokly:sps:sebastian" maxlength="256"></div>
-    <div class="form-field"><label>Kundens chat-API (bruges i stedet for agent-id, hvis udfyldt)</label><input id="fChatUrl" placeholder="https://sps.snorkild.cc/api/chat" maxlength="512"></div>
+    <div class="form-field"><label>Kundens chat-API (kun notat — appen bruger den ikke)</label><input id="fChatUrl" placeholder="https://sps.snorkild.cc/api/chat" maxlength="512"></div>
     <div class="form-field"><label>Website URL</label><input id="fWebsite" placeholder="https://spsgruppen.dk" maxlength="512"></div>
     <div class="form-field"><label>Dine systemer (én pr. linje: Navn | https://…)</label><textarea id="fLinks" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit" placeholder="Opgave-app | https://sps.snorkild.cc"></textarea></div>
     <div class="form-field"><label>Bygget til kunden (én pr. linje, nyeste øverst)</label><textarea id="fLeverancer" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit" placeholder="12/9: Chat med billedanalyse på hjemmesiden"></textarea></div>
@@ -567,7 +560,6 @@ async function enterApp(data){
     $('setCompanyRO').textContent=data.company;
     $('editEmail').value=data.email||''; $('editPhone').value=data.phone||'';
     $('editAddress').value=data.address||''; $('editHours').value=data.hours||'';
-    $('testChatBox').hidden=!data.has_chat_url;
     initPushUI();
     const want=new URLSearchParams(location.search).get('tab');
     if(want&&tabMap[want]&&$('nav'+want)&&!$('nav'+want).hidden){switchTab(want,$('nav'+want));history.replaceState(null,'','/');await loadHistory();return;}
@@ -579,33 +571,6 @@ async function enterApp(data){
     if(!$('messages').children.length){$('messages').innerHTML='<div class="req-empty" style="margin:auto;max-width:320px">Her skriver du til din egen assistent. Den kender jeres systemer, jeres ønsker og hvad der er sket de sidste uger.<br><br>Fx: <i>Hvad er kommet ind i denne uge?</i> · <i>Hvad venter vi på?</i> · <i>Skriv et udkast til svar på den henvendelse</i>.</div>';}
     $('input').focus();
   }
-}
-
-// ── Test af kundens egen chat (slutkunde-chatten) ────────────────────────────
-let testChatHistory=[], testChatSid='';
-function addTestMsg(role,text){
-  const box=$('testChatMsgs'); box.style.display='flex';
-  const d=document.createElement('div');
-  d.style.cssText='padding:8px 12px;border-radius:12px;font-size:14px;white-space:pre-wrap;max-width:85%;'+
-    (role==='user'?'align-self:flex-end;background:var(--cyan);color:#fff':'align-self:flex-start;background:var(--surface2);color:var(--text)');
-  d.textContent=text; box.appendChild(d); box.scrollTop=box.scrollHeight; return d;
-}
-async function sendTestChat(){
-  const inp=$('testChatInput'), btn=$('testChatBtn'), txt=inp.value.trim();
-  if(!txt) return;
-  inp.value=''; $('testChatErr').textContent=''; btn.disabled=true;
-  addTestMsg('user',txt);
-  const venter=addTestMsg('assistant','Skriver ...');
-  try{
-    const r=await fetch('/api/testchat',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:txt,session_id:testChatSid,messages:testChatHistory.slice(-20)})});
-    const data=await r.json();
-    if(!r.ok) throw data.error||'Fejl';
-    venter.textContent=data.reply||'(tomt svar)';
-    if(data.session_id) testChatSid=data.session_id;
-    testChatHistory.push({role:'user',content:txt},{role:'assistant',content:data.reply||''});
-  }catch(e){ venter.remove(); $('testChatErr').textContent=e.toString(); }
-  btn.disabled=false; inp.focus();
 }
 
 function setField(id,val){const el=$(id);if(val){el.textContent=val;el.classList.remove('empty');}else{el.textContent='Ikke angivet';el.classList.add('empty');}}
@@ -1189,7 +1154,17 @@ async function loadOverview(){
     $('ovLeverancer').innerHTML=lev.length?lev.join(''):'<div class="req-empty">Intet endnu. Det første, vi bygger, dukker op her.</div>';
     $('ovAftaleBox').hidden=!o.aftale;$('ovAftale').textContent=o.aftale||'';
     $('ovOnbBox').hidden=!(o.onboarding&&o.onboarding.length);
-    $('ovOnb').innerHTML=(o.onboarding||[]).map(x=>`<div class="ov-item" style="display:flex;gap:10px;align-items:center${x.done?';color:var(--text2)':''}"><span style="width:20px;height:20px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;${x.done?'background:var(--cyan);color:#fff':'border:2px solid var(--border)'}">${x.done?'✓':''}</span><span style="${x.done?'text-decoration:line-through':''}">${esc(x.text)}</span></div>`).join('');
+    $('ovOnb').innerHTML=(o.onboarding||[]).map(x=>{
+      let knap='';
+      if(x.knap&&x.handling&&!x.done){
+        const h=x.handling;
+        const klik=/^https?:\/\//.test(h)?`window.open('${esc(h)}','_blank')`
+          :(h==='oenske'?`switchTab('Requests',$('navRequests'))`
+          :(h==='indstillinger'?`switchTab('Settings',$('navSettings'))`:''));
+        if(klik) knap=`<button class="secondary" style="margin-left:auto;flex-shrink:0;padding:6px 12px;font-size:13px" onclick="${klik}">${esc(x.knap)}</button>`;
+      }
+      return `<div class="ov-item" style="display:flex;gap:10px;align-items:center${x.done?';color:var(--text2)':''}"><span style="width:20px;height:20px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;${x.done?'background:var(--cyan);color:#fff':'border:2px solid var(--border)'}">${x.done?'✓':''}</span><span style="${x.done?'text-decoration:line-through':''}">${esc(x.text)}</span>${knap}</div>`;
+    }).join('');
     const t=o.uge.typer||{};const kort={henvendelse:'Henvendelser',lead:'Nye leads',opkald:'Opkald taget',tilbud:'Tilbud sendt',booking:'Bookinger',opgave:'Opgaver',lager:'Lager-registreringer',andet:'Andet'};
     const top=Object.entries(t).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
     $('ugStats').innerHTML=top.map(([k,n])=>`<div class="stat-card"><div class="stat-num">${n}</div><div class="stat-label">${esc(kort[k]||k)}</div></div>`).join('');$('ugStats').hidden=!top.length;
