@@ -531,6 +531,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 <script>
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
+// Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
+// moduler, der melder hændelser: skriver modulet et nummer, kan kunden ringe derfra.
+function medRing(tekst){
+  return esc(tekst).replace(/(?:\+45[\s]?)?(\d{2}[\s]?\d{2}[\s]?\d{2}[\s]?\d{2})(?!\d)/g, m=>{
+    const rent=m.replace(/\s/g,''); const nr=rent.startsWith('+45')?rent:'+45'+rent;
+    if(rent.replace('+45','').length!==8) return m;
+    return `<a href="tel:${nr}" style="color:var(--cyan);font-weight:600;text-decoration:none">${m}</a>`;
+  });
+}
 // Et <a href> kan ikke sætte X-Session-headeren, og Safari sender ikke cookien
 // til portal.snorkild.cc. Fil-links får derfor token med som ?t=.
 const filUrl=p=>{if(!API)return p;let t='';try{t=localStorage.getItem('lokly_session')||'';}catch(e){}
@@ -1202,7 +1211,7 @@ async function loadOverview(){
     $('ugStats').innerHTML=top.map(([k,n])=>`<div class="stat-card"><div class="stat-num">${n}</div><div class="stat-label">${esc(kort[k]||k)}</div></div>`).join('');$('ugStats').hidden=!top.length;
     let sum=o.uge.antal?`<b>${o.uge.antal}</b> hændelser denne uge, <b>${o.total.antal}</b> siden start.`:'Ingen hændelser endnu. Når jeres systemer er i drift, står her, hvad assistenten har gjort.';
     $('ugSum').innerHTML=sum;
-    $('ovTidslinje').innerHTML=(o.tidslinje||[]).slice(0,12).map(e=>`<div class="ov-item"><b>${esc(o.event_labels[e.type]||e.type)}</b>${e.text?': '+esc(e.text):''}<br><small>${fmtTs(e.ts)}${e.source?' · '+esc(e.source):''}</small></div>`).join('');
+    $('ovTidslinje').innerHTML=(o.tidslinje||[]).slice(0,12).map(e=>`<div class="ov-item"><b>${esc(o.event_labels[e.type]||e.type)}</b>${e.text?': '+medRing(e.text):''}<br><small>${fmtTs(e.ts)}${e.source?' · '+esc(e.source):''}</small></div>`).join('');
     $('ovForslagBox').hidden=!(o.forslag&&o.forslag.length);
     $('ovForslag').innerHTML=(o.forslag||[]).map(f=>`<div class="ov-item" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>${esc(f)}</span><button style="white-space:nowrap;padding:8px 12px;border-radius:8px;border:none;background:var(--cyan);color:#fff;font-weight:600;cursor:pointer" onclick="acceptForslag(this.dataset.t)" data-t="${esc(f)}">Ja, byg det</button></div>`).join('');
   }catch(e){}
