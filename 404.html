@@ -310,8 +310,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 
     <div class="tab-pane admin-pane" id="tabAdmin">
       <div class="stats-row">
-        <div class="stat-card"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Kunder</div></div>
-        <div class="stat-card"><div class="stat-num" id="statActive">—</div><div class="stat-label">Aktive</div></div>
+        <div class="stat-card"><div class="stat-num" id="statActive">—</div><div class="stat-label">Aktive kunder</div></div>
+        <div class="stat-card"><div class="stat-num" id="statMrr">—</div><div class="stat-label">Kr./md</div></div>
         <div class="stat-card"><div class="stat-num" id="statMsgs">—</div><div class="stat-label">Beskeder</div></div>
       </div>
       <div>
@@ -322,6 +322,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       </div>
       <div class="customer-list" id="customerList">
         <div style="color:var(--text2);font-size:14px;text-align:center;padding:20px">Henter…</div>
+      </div>
+      <div class="req-form" id="crmBox" style="margin-top:16px">
+        <div class="admin-section-header"><h3>CRM</h3><button class="btn-add" onclick="loadCrm()">Opdatér</button></div>
+        <p id="crmSum" style="font-size:13px;color:var(--text2)">Henter…</p>
+        <div class="req-list" id="crmNaeste"></div>
+        <a class="ov-link" href="https://crm.snorkild.cc" target="_blank" rel="noopener" style="margin-top:10px;display:block">Åbn hele CRM'et</a>
       </div>
     </div>
 
@@ -426,6 +432,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <div class="form-field"><label>Agent ID</label><input id="fAgentId" placeholder="sps-gruppen" maxlength="128"></div>
       <div class="form-field"><label>Plan</label>
         <select id="fPlan"><option value="basic">Basic</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select>
+      </div>
+      <div class="form-field"><label>Pris pr. måned (kr. ekskl. moms) — tæller med i Kr./md</label>
+        <input id="fPris" inputmode="numeric" placeholder="3500" maxlength="9">
       </div>
     </div>
     <div class="form-field"><label>Session Key</label><input id="fSessionKey" placeholder="lokly:sps:sebastian" maxlength="256"></div>
@@ -937,15 +946,31 @@ async function newChat(){
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
+async function loadCrm(){
+  try{
+    const r=await fetch('/api/admin/crm'); const d=await r.json();
+    if(!r.ok) throw d.error||'Fejl';
+    const st=(d.status||[]).map(([k,v])=>`${v} ${esc(k)}`).join(' · ');
+    $('crmSum').textContent=`${d.i_alt} leads · ${st}`;
+    $('crmNaeste').innerHTML=(d.naeste||[]).slice(0,10).map(l=>
+      `<div class="ov-item" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+         <span><b>${esc(l.navn)}</b><br><small style="color:var(--text2)">${esc(l.by||'')}${l.kategori?' · '+esc(l.kategori):''}</small></span>
+         <a href="tel:${esc((l.telefon||'').replace(/\s/g,''))}" style="white-space:nowrap;padding:8px 12px;border-radius:8px;background:var(--cyan);color:#fff;font-weight:600;text-decoration:none">Ring</a>
+       </div>`).join('')||'<div class="req-empty">Ingen leads med telefonnummer.</div>';
+  }catch(e){$('crmSum').textContent='CRM: '+e;$('crmNaeste').innerHTML='';}
+}
+
 async function loadAdminData(){
   try{
     await loadAdminRequests();
     const [sr,cr]=await Promise.all([fetch('/api/admin/stats'),fetch('/api/admin/customers')]);
     const stats=await sr.json(), custs=await cr.json();
-    $('statTotal').textContent=stats.total;
     $('statActive').textContent=stats.active;
+    $('statMrr').textContent=(stats.mrr||0).toLocaleString('da-DK');
     $('statMsgs').textContent=stats.messages;
     renderCustomers(custs);
+    loadCrm();
+    if(stats.uden_pris){$('statMrr').title=stats.uden_pris+' aktiv(e) kunde(r) mangler en pris';}
   }catch(e){$('customerList').innerHTML=`<div style="color:var(--red);padding:12px;font-size:14px">Fejl: ${e}</div>`;}
 }
 
@@ -985,7 +1010,7 @@ function openAddModal(){
 }
 
 function openEditModal(c){
-  $('fOnb').value=c.onboarding||'';$('fForslag').value=c.forslag||'';$('fApiKey').value=c.api_key||'';$('fChatUrl').value=c.chat_url||'';$('fLinks').value=c.links||'';$('fLeverancer').value=c.leverancer||'';$('fMoede').value=c.naeste_moede||'';$('fAftale').value=c.aftale||'';
+  $('fOnb').value=c.onboarding||'';$('fForslag').value=c.forslag||'';$('fApiKey').value=c.api_key||'';$('fPris').value=c.maaned_pris||'';$('fChatUrl').value=c.chat_url||'';$('fLinks').value=c.links||'';$('fLeverancer').value=c.leverancer||'';$('fMoede').value=c.naeste_moede||'';$('fAftale').value=c.aftale||'';
   editingUsername=c.username;
   $('modalTitle').textContent='Rediger'; $('modalSub').textContent=c.company;
   $('modalSaveBtn').textContent='Gem'; $('fUsername').value=c.username; $('fUsername').disabled=true;
@@ -1003,7 +1028,7 @@ async function saveCustomer(){
     const body={company:$('fCompany').value.trim(),username:$('fUsername').value.trim().toLowerCase(),
       email:$('fEmail').value.trim(),phone:$('fPhone').value.trim(),agent_id:$('fAgentId').value.trim(),
       session_key:$('fSessionKey').value.trim(),website_url:$('fWebsite').value.trim(),
-      address:$('fAddress').value.trim(),hours:$('fHours').value.trim(),plan:$('fPlan').value,chat_url:$('fChatUrl').value,forslag:$('fForslag').value,onboarding:$('fOnb').value,links:$('fLinks').value,leverancer:$('fLeverancer').value,naeste_moede:$('fMoede').value,aftale:$('fAftale').value};
+      address:$('fAddress').value.trim(),hours:$('fHours').value.trim(),plan:$('fPlan').value,maaned_pris:$('fPris').value.trim(),chat_url:$('fChatUrl').value,forslag:$('fForslag').value,onboarding:$('fOnb').value,links:$('fLinks').value,leverancer:$('fLeverancer').value,naeste_moede:$('fMoede').value,aftale:$('fAftale').value};
     if(editingUsername){
       const r=await fetch(`/api/admin/customers/${encodeURIComponent(editingUsername)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       const d=await r.json(); if(!r.ok) throw d.error;
