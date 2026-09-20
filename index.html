@@ -334,6 +334,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
           </div>
           <div id="prisLinjer" style="font-size:15px;margin-top:6px;line-height:1.6"></div>
         </div>
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px" id="crmFiltre"></div>
+        <input id="crmSoeg" placeholder="Søg i navn, by, telefon, noter" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;margin-bottom:8px" oninput="crmSoegSenere()">
         <p id="crmSum" style="font-size:13px;color:var(--text2)">Henter…</p>
         <div class="req-list" id="crmNaeste"></div>
         <a class="ov-link" href="https://crm.snorkild.cc" target="_blank" rel="noopener" style="margin-top:10px;display:block">Åbn hele CRM'et</a>
@@ -553,7 +555,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20260920-1034';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20260920-1100';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -1002,18 +1004,89 @@ async function retPriser(){
   if(r.ok) loadPriser(); else alert('Kunne ikke gemme prislisten.');
 }
 
+let crmFilter='nye', crmData={}, crmTimer=null, crmAaben=null;
+const CRM_FILTRE=[['nye','Ikke ringet'],['i_dag','Ring i dag'],['varme','Varme'],['kunder','Kunder'],['alle','Alle']];
+
+function crmSoegSenere(){clearTimeout(crmTimer);crmTimer=setTimeout(()=>loadCrm(),400);}
+
 async function loadCrm(){
+  const q=$('crmSoeg')?$('crmSoeg').value.trim():'';
   try{
-    const r=await fetch('/api/admin/crm'); const d=await r.json();
-    if(!r.ok) throw d.error||'Fejl';
-    const st=(d.status||[]).map(([k,v])=>`${v} ${esc(k)}`).join(' · ');
-    $('crmSum').textContent=`${d.i_alt} leads · ${st}`;
-    $('crmNaeste').innerHTML=(d.naeste||[]).slice(0,10).map(l=>
-      `<div class="ov-item" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
-         <span><b>${esc(l.navn)}</b><br><small style="color:var(--text2)">${esc(l.by||'')}${l.kategori?' · '+esc(l.kategori):''}</small></span>
-         <a href="tel:${esc((l.telefon||'').replace(/\s/g,''))}" style="white-space:nowrap;padding:8px 12px;border-radius:8px;background:var(--cyan);color:#fff;font-weight:600;text-decoration:none">Ring</a>
-       </div>`).join('')||'<div class="req-empty">Ingen leads med telefonnummer.</div>';
+    const r=await fetch(`/api/admin/crm?filter=${encodeURIComponent(crmFilter)}&q=${encodeURIComponent(q)}`);
+    const d=await r.json(); if(!r.ok) throw d.error||'Fejl';
+    crmData=d;
+    $('crmFiltre').innerHTML=CRM_FILTRE.map(([k,navn])=>{
+      const n=k==='nye'?(d.tael.ny||0):(k==='i_dag'?'':(k==='kunder'?(d.tael.kunde||0):''));
+      return `<button onclick="crmFilter='${k}';loadCrm()" style="white-space:nowrap;padding:7px 12px;border-radius:999px;border:1px solid ${crmFilter===k?'var(--cyan)':'var(--border)'};background:${crmFilter===k?'var(--cyan)':'var(--surface)'};color:${crmFilter===k?'#fff':'var(--text)'};font-size:13px;font-weight:600;cursor:pointer">${navn}${n!==''&&n!==0?' '+n:''}</button>`;
+    }).join('');
+    $('crmSum').textContent=`${d.antal} af ${d.i_alt} leads`+(d.antal>d.leads.length?` · viser ${d.leads.length}`:'');
+    $('crmNaeste').innerHTML=d.leads.map(l=>crmKort(l,d.status_navne)).join('')||'<div class="req-empty">Ingen leads her.</div>';
   }catch(e){$('crmSum').textContent='CRM: '+e;$('crmNaeste').innerHTML='';}
+}
+
+function crmKort(l,navne){
+  const aaben=crmAaben===String(l.id);
+  const tlf=(l.telefon||'').replace(/\s/g,'');
+  const stFarve={ny:'var(--text2)',ringet:'var(--orange)',ring_igen:'var(--orange)',interesseret:'var(--green)',moede:'var(--green)',kunde:'var(--cyan)',nej:'var(--red)'}[l.status]||'var(--text2)';
+  return `<div class="ov-item" style="padding:12px 0">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+      <span style="cursor:pointer;flex:1" onclick="crmAaben=${aaben?'null':`'${esc(String(l.id))}'`};loadCrm()">
+        <b>${esc(l.navn)}</b><br>
+        <small style="color:var(--text2)">${esc(l.by||'')}${l.kategori?' · '+esc(l.kategori):''}</small><br>
+        <small style="color:${stFarve};font-weight:600">${esc(navne[l.status]||l.status)}${l.ring_igen&&l.status==='ring_igen'?' '+esc(l.ring_igen):''}</small>
+      </span>
+      ${tlf?`<a href="tel:${esc(tlf)}" onclick="event.stopPropagation()" style="white-space:nowrap;padding:8px 14px;border-radius:8px;background:var(--cyan);color:#fff;font-weight:600;text-decoration:none">Ring</a>`:''}
+    </div>
+    ${aaben?`
+    <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px">
+        ${l.adresse?esc(l.adresse)+'<br>':''}${l.telefon?esc(l.telefon)+'<br>':''}${l.email?esc(l.email)+'<br>':''}
+        ${l.hjemmeside?`<a href="${esc(l.hjemmeside.startsWith('http')?l.hjemmeside:'https://'+l.hjemmeside)}" target="_blank" rel="noopener" style="color:var(--cyan)">${esc(l.hjemmeside)}</a>`:''}
+      </div>
+      <div id="res${l.id}" style="font-size:13.5px;white-space:pre-wrap;line-height:1.5;background:var(--surface2);border-radius:10px;padding:10px;margin-bottom:8px;${l.research?'':'display:none'}">${esc(l.research||'')}</div>
+      <button class="btn-secondary" style="width:100%;margin-bottom:8px" id="resBtn${l.id}" onclick="crmResearch('${esc(String(l.id))}')">${l.research?'Find info igen':'Find info om firmaet'}</button>
+      <select onchange="crmStatus('${esc(String(l.id))}',this.value)" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;margin-bottom:8px">
+        ${Object.entries(navne).map(([k,v])=>`<option value="${k}"${k===l.status?' selected':''}>${esc(v)}</option>`).join('')}
+      </select>
+      <div id="dato${l.id}" style="${l.status==='ring_igen'?'':'display:none'};margin-bottom:8px">
+        <input type="date" id="rd${l.id}" value="${esc(l.ring_igen||crmData.i_dag||'')}" onchange="crmGem('${esc(String(l.id))}',{ring_igen:this.value})" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px">
+      </div>
+      <textarea id="no${l.id}" rows="2" placeholder="Noter: hvem talte du med, hvad sagde de" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;resize:vertical">${esc(l.noter||'')}</textarea>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="crmGem('${esc(String(l.id))}',{noter:$('no${l.id}').value})">Gem noter</button>
+      <div id="msg${l.id}" style="font-size:13px;margin-top:6px;min-height:16px"></div>
+    </div>`:''}
+  </div>`;
+}
+
+async function crmGem(id,felter){
+  const m=$('msg'+id); if(m){m.style.color='';m.textContent='Gemmer…';}
+  try{
+    const r=await fetch('/api/admin/crm/'+encodeURIComponent(id),{method:'PATCH',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(felter)});
+    const d=await r.json(); if(!r.ok) throw d.error||'Fejl';
+    if(m){m.style.color='var(--green)';m.textContent='Gemt.';}
+    return true;
+  }catch(e){ if(m){m.style.color='var(--red)';m.textContent=e.toString();} return false; }
+}
+
+async function crmStatus(id,status){
+  const ok=await crmGem(id,{status});
+  const d=$('dato'+id); if(d) d.style.display=status==='ring_igen'?'':'none';
+  if(ok&&status==='ring_igen'&&$('rd'+id)&&$('rd'+id).value) crmGem(id,{ring_igen:$('rd'+id).value});
+  if(ok&&status!=='ring_igen') setTimeout(loadCrm,600);
+}
+
+async function crmResearch(id){
+  const btn=$('resBtn'+id), boks=$('res'+id);
+  btn.disabled=true; btn.textContent='Søger på nettet… (op til et minut)';
+  try{
+    const r=await fetch(`/api/admin/crm/${encodeURIComponent(id)}/research`,{method:'POST',
+      headers:{'Content-Type':'application/json'},body:'{}'});
+    const d=await r.json(); if(!r.ok) throw d.error||'Fejl';
+    boks.textContent=d.research; boks.style.display='';
+    btn.textContent='Find info igen';
+  }catch(e){ btn.textContent='Prøv igen'; const m=$('msg'+id); if(m){m.style.color='var(--red)';m.textContent=e.toString();} }
+  btn.disabled=false;
 }
 
 async function loadAdminData(){
