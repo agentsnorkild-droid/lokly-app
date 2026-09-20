@@ -372,6 +372,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 
     <div class="tab-pane settings-pane" id="tabSettings">
       <h3>Indstillinger</h3>
+      <div class="push-box"><b>Beskeder på telefonen</b><p id="pushHint">Få besked, når dit ønske er i gang eller færdigt. På iPhone skal appen først ligge på hjemmeskærmen (Del, Føj til hjemmeskærm).</p><button class="btn-primary" style="width:100%" id="pushBtn" onclick="togglePush()">Slå beskeder til</button><div id="pushMsg" style="font-size:13px;margin-top:8px;min-height:18px"></div></div>
       <!-- Read-only view (admin) -->
       <div id="settingsReadOnly">
         <div class="setting-field"><label>Firmanavn</label><div class="value" id="setCompany"></div></div>
@@ -382,7 +383,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       </div>
       <!-- Editable view (customer) -->
       <div id="settingsEditable" style="display:none">
-        <div class="push-box"><b>Beskeder på telefonen</b><p id="pushHint">Få besked, når dit ønske er i gang eller færdigt. På iPhone skal appen først ligge på hjemmeskærmen (Del, Føj til hjemmeskærm).</p><button class="btn-primary" style="width:100%" id="pushBtn" onclick="togglePush()">Slå beskeder til</button><div id="pushMsg" style="font-size:13px;margin-top:8px;min-height:18px"></div></div>
         <div class="setting-field"><label>Firmanavn</label><div class="value" id="setCompanyRO"></div></div>
         <div class="form-field"><label>Email</label><input id="editEmail" placeholder="info@firma.dk" maxlength="128"></div>
         <div class="form-field"><label>Telefon</label><input id="editPhone" placeholder="+45 12 34 56 78" maxlength="64"></div>
@@ -551,6 +551,8 @@ async function enterApp(data){
     $('tabAdmin').classList.add('active'); $('navAdmin').classList.add('active');
     setField('setCompany',data.company); setField('setEmail',data.email);
     setField('setPhone',data.phone); setField('setAddress',data.address); setField('setHours',data.hours);
+    $('pushHint').textContent='Få besked på telefonen, når en kunde sender et ønske eller melder en fejl. På iPhone skal appen først ligge på hjemmeskærmen (Del, Føj til hjemmeskærm).';
+    initPushUI();
     loadAdminData();
   } else {
     $('headerActions').style.display='';
