@@ -1186,7 +1186,9 @@ async function loadOverview(){
         const h=x.handling;
         const klik=/^https?:\/\//.test(h)?`window.open('${esc(h)}','_blank')`
           :(h==='oenske'?`switchTab('Requests',$('navRequests'))`
-          :(h==='indstillinger'?`switchTab('Settings',$('navSettings'))`:''));
+          :(h==='indstillinger'?`switchTab('Settings',$('navSettings'))`
+          :(h==='dokumenter'?`switchTab('Docs',$('navDocs'))`
+          :(h==='overblik'?`switchTab('Dashboard',$('navDashboard'))`:''))));
         if(klik) knap=`<button class="secondary" style="margin-left:auto;flex-shrink:0;padding:6px 12px;font-size:13px" onclick="${klik}">${esc(x.knap)}</button>`;
       }
       return `<div class="ov-item" style="display:flex;gap:10px;align-items:center${x.done?';color:var(--text2)':''}"><span style="width:20px;height:20px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;${x.done?'background:var(--cyan);color:#fff':'border:2px solid var(--border)'}">${x.done?'✓':''}</span><span style="${x.done?'text-decoration:line-through':''}">${esc(x.text)}</span>${knap}</div>`;
