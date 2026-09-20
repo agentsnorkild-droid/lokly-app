@@ -476,11 +476,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <!-- Modal: Dokumenter (admin) -->
+<div class="modal-overlay" id="signModal" onclick="if(event.target===this)closeSign()">
+  <div class="modal" style="max-height:92dvh;display:flex;flex-direction:column">
+    <h2>Underskriv</h2>
+    <p class="modal-sub" id="signDocTitle"></p>
+    <div id="signStep1">
+      <p style="font-size:14px;margin-bottom:12px">Når du skriver under, er aftalen bindende. Har du ikke læst dokumentet endnu, så luk her og åbn det først.</p>
+      <div class="form-field"><label>Dit fulde navn</label><input id="signName" placeholder="Fornavn Efternavn" maxlength="120" autocomplete="name"></div>
+      <label style="font-size:13px;color:var(--text2);display:block;margin-bottom:6px">Tegn din underskrift</label>
+      <canvas id="signPad" style="width:100%;height:150px;border:1px dashed var(--border);border-radius:12px;background:var(--bg);touch-action:none;display:block"></canvas>
+      <button class="btn-secondary" style="width:100%;margin-top:6px;padding:8px;font-size:13px" onclick="clearPad()">Ryd</button>
+      <button class="btn-primary" style="width:100%;margin-top:12px" id="signCodeBtn" onclick="sendSignCode()">Send kode på sms</button>
+      <div id="signMsg1" style="font-size:13px;margin-top:8px;min-height:18px"></div>
+    </div>
+    <div id="signStep2" hidden>
+      <p style="font-size:14px;margin-bottom:12px" id="signSentTo"></p>
+      <div class="form-field"><label>Kode fra sms</label><input id="signCode" inputmode="numeric" maxlength="6" placeholder="6 cifre" style="font-size:22px;letter-spacing:6px;text-align:center"></div>
+      <button class="btn-primary" style="width:100%" id="signDoneBtn" onclick="doSign()">Skriv under</button>
+      <button class="btn-secondary" style="width:100%;margin-top:8px;padding:8px;font-size:13px" onclick="sendSignCode()">Send ny kode</button>
+      <div id="signMsg2" style="font-size:13px;margin-top:8px;min-height:18px"></div>
+    </div>
+    <div class="modal-actions"><button class="btn-secondary" onclick="closeSign()">Luk</button></div>
+  </div>
+</div>
 <div class="modal-overlay" id="docModal" onclick="if(event.target===this)$('docModal').classList.remove('open')">
   <div class="modal" style="max-height:85vh;display:flex;flex-direction:column">
     <h2 id="docTitle">Dokumenter</h2>
     <p class="modal-sub">Aftale, prisliste, vejledning. Kunden får en push-besked ved nye filer.</p>
     <div class="form-field"><input id="docFileTitle" placeholder="Titel (fx Konsulentaftale, sept. 2026)" maxlength="120"></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="docSign" style="width:18px;height:18px"> Skal underskrives af kunden</label>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><input type="file" id="docFile" accept=".pdf,.png,.jpg,.jpeg,.txt,.md,.docx,.xlsx,.csv"><button class="btn-primary" onclick="uploadDoc()">Læg op</button></div>
     <div id="docMsg" style="font-size:13px;min-height:18px"></div>
     <div id="docAdminList" class="req-list" style="overflow-y:auto"></div>
@@ -1234,14 +1258,84 @@ async function acceptForslag(text){
 function fmtBytes(b){return b>1e6?(b/1e6).toFixed(1)+' MB':Math.round(b/1e3)+' KB';}
 async function loadDocs(){
   try{const r=await fetch('/api/docs');if(!r.ok)return;const items=await r.json();
-    $('docList').innerHTML=items.length?items.map(d=>`<a class="ov-link" href="${api(`/api/docs/${encodeURIComponent(userData.username)}/file/${d.id}`)}" target="_blank" rel="noopener">${esc(d.titel)}<br><small style="color:var(--text2);font-weight:400">${esc(d.navn)} · ${fmtBytes(d.bytes)} · ${fmtTs(d.ts)}</small></a>`).join(''):'<div class="req-empty">Ingen dokumenter endnu.</div>';
+    $('docList').innerHTML=items.length?items.map(d=>{
+      const url=api(`/api/docs/${encodeURIComponent(userData.username)}/file/${d.id}`);
+      const linje=`<a class="ov-link" href="${url}" target="_blank" rel="noopener">${esc(d.titel)}<br><small style="color:var(--text2);font-weight:400">${esc(d.navn)} · ${fmtBytes(d.bytes)} · ${fmtTs(d.ts)}</small></a>`;
+      if(d.underskrift){
+        const u=d.underskrift;
+        return `<div class="req-form" style="margin-bottom:10px">${linje}
+          <div style="margin-top:10px;padding:12px;border-radius:10px;background:var(--surface2);border-left:3px solid var(--green)">
+            <b style="color:var(--green)">Underskrevet</b>
+            <p style="font-size:13px;color:var(--text2);margin:4px 0 0">${esc(u.navn)} · ${fmtTs(u.ts)}<br>Bekræftet med ${esc(u.metode||'kodeord')}. Dokumentet er låst.</p>
+            ${u.tegning?`<img src="${api(`/api/docs/${encodeURIComponent(userData.username)}/sign/${d.id}`)}" alt="Underskrift" style="max-width:220px;margin-top:8px;display:block">`:''}
+            <p style="font-size:11px;color:var(--text2);margin-top:6px;word-break:break-all">Aftryk: ${esc((u.aftryk||'').slice(0,32))}…</p>
+          </div></div>`;
+      }
+      if(d.kraever_underskrift){
+        return `<div class="req-form" style="margin-bottom:10px">${linje}
+          <p style="font-size:13px;color:var(--orange);margin:8px 0 6px"><b>Skal underskrives.</b> Læs dokumentet først.</p>
+          <button class="btn-primary" style="width:100%" onclick="startSign('${d.id}',${JSON.stringify(d.titel).replace(/"/g,'&quot;')})">Underskriv</button></div>`;
+      }
+      return linje;
+    }).join(''):'<div class="req-empty">Ingen dokumenter endnu.</div>';
   }catch(e){}
 }
+// ── Underskrift ───────────────────────────────────────────────────────────────
+let signDocId='', padCtx=null, padTegnet=false;
+function startSign(id,titel){
+  signDocId=id; $('signDocTitle').textContent=titel;
+  $('signStep1').hidden=false; $('signStep2').hidden=true;
+  $('signName').value=''; $('signCode').value='';
+  $('signMsg1').textContent=''; $('signMsg2').textContent='';
+  $('signModal').classList.add('open');
+  setTimeout(initPad,50);
+}
+function closeSign(){$('signModal').classList.remove('open');}
+function initPad(){
+  const c=$('signPad'), r=c.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  c.width=r.width*dpr; c.height=r.height*dpr;
+  padCtx=c.getContext('2d'); padCtx.scale(dpr,dpr);
+  padCtx.lineWidth=2.2; padCtx.lineCap='round'; padCtx.lineJoin='round';
+  padCtx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--text')||'#1a2b2a';
+  padTegnet=false;
+  let tegner=false;
+  const pos=e=>{const b=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return[t.clientX-b.left,t.clientY-b.top];};
+  const start=e=>{e.preventDefault();tegner=true;padTegnet=true;const[x,y]=pos(e);padCtx.beginPath();padCtx.moveTo(x,y);};
+  const flyt=e=>{if(!tegner)return;e.preventDefault();const[x,y]=pos(e);padCtx.lineTo(x,y);padCtx.stroke();};
+  const slut=()=>{tegner=false;};
+  c.onmousedown=start;c.onmousemove=flyt;window.onmouseup=slut;
+  c.ontouchstart=start;c.ontouchmove=flyt;c.ontouchend=slut;
+}
+function clearPad(){const c=$('signPad');if(padCtx){padCtx.clearRect(0,0,c.width,c.height);padTegnet=false;}}
+async function sendSignCode(){
+  const navn=$('signName').value.trim(), m=$('signMsg1'); m.style.color='';
+  if(navn.length<3){m.style.color='var(--red)';m.textContent='Skriv dit fulde navn først.';return;}
+  const btn=$('signCodeBtn'); btn.disabled=true; m.textContent='Sender kode…';
+  try{
+    const r=await fetch(`/api/docs/${signDocId}/kode`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d=await r.json(); if(!r.ok) throw d.error||'Fejl';
+    $('signSentTo').textContent='Vi har sendt en kode til '+(d.sendt_til||'din telefon')+'. Den gælder i 10 minutter.';
+    $('signStep1').hidden=true; $('signStep2').hidden=false; $('signCode').focus();
+  }catch(e){m.style.color='var(--red)';m.textContent=e.toString();}
+  btn.disabled=false;
+}
+async function doSign(){
+  const m=$('signMsg2'), btn=$('signDoneBtn'); m.style.color=''; btn.disabled=true; m.textContent='Skriver under…';
+  try{
+    const r=await fetch(`/api/docs/${signDocId}/underskriv`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({navn:$('signName').value.trim(),kode:$('signCode').value.trim(),
+                           tegning:padTegnet?$('signPad').toDataURL('image/png'):''})});
+    const d=await r.json(); if(!r.ok) throw d.error||'Fejl';
+    closeSign(); loadDocs();
+  }catch(e){m.style.color='var(--red)';m.textContent=e.toString();}
+  btn.disabled=false;
+}
+
 let docUser='';
 async function openDocs(username,company){docUser=username;$('docTitle').textContent='Dokumenter: '+company;$('docMsg').textContent='';$('docFileTitle').value='';$('docFile').value='';$('docModal').classList.add('open');loadAdminDocs();}
 async function loadAdminDocs(){
   const r=await fetch('/api/admin/docs/'+encodeURIComponent(docUser)); const items=r.ok?await r.json():[];
-  $('docAdminList').innerHTML=items.length?items.map(d=>`<div class="ov-item" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><a href="${api(`/api/docs/${encodeURIComponent(docUser)}/file/${d.id}`)}" target="_blank" style="color:var(--cyan);font-weight:600;text-decoration:none">${esc(d.titel)}</a><span style="display:flex;gap:6px;align-items:center"><small>${fmtBytes(d.bytes)}</small><button class="btn-icon danger" onclick="deleteDoc('${d.id}')">🗑</button></span></div>`).join(''):'<div class="req-empty">Ingen filer endnu.</div>';
+  $('docAdminList').innerHTML=items.length?items.map(d=>`<div class="ov-item" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><a href="${api(`/api/docs/${encodeURIComponent(docUser)}/file/${d.id}`)}" target="_blank" style="color:var(--cyan);font-weight:600;text-decoration:none">${esc(d.titel)}</a><span style="display:flex;gap:6px;align-items:center"><small>${d.underskrift?'Underskrevet '+fmtTs(d.underskrift.ts):(d.kraever_underskrift?'Afventer underskrift':fmtBytes(d.bytes))}</small>${d.underskrift?'':`<button class="btn-icon danger" onclick="deleteDoc('${d.id}')">🗑</button>`}</span></div>`).join(''):'<div class="req-empty">Ingen filer endnu.</div>';
 }
 function fileToB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
 async function uploadDoc(){
@@ -1249,8 +1343,8 @@ async function uploadDoc(){
   if(f.size>15e6){$('docMsg').textContent='Filen er for stor (maks 15 MB).';return;}
   $('docMsg').textContent='Lægger op…';
   const data=await fileToB64(f);
-  const r=await fetch('/api/admin/docs/'+encodeURIComponent(docUser),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:f.name,title:$('docFileTitle').value,data})});
-  const d=await r.json(); $('docMsg').textContent=r.ok?'Lagt op.':(d.error||'Fejl'); if(r.ok){$('docFile').value='';$('docFileTitle').value='';loadAdminDocs();}
+  const r=await fetch('/api/admin/docs/'+encodeURIComponent(docUser),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:f.name,title:$('docFileTitle').value,data,underskrift:$('docSign').checked})});
+  const d=await r.json(); $('docMsg').textContent=r.ok?'Lagt op.':(d.error||'Fejl'); if(r.ok){$('docFile').value='';$('docFileTitle').value='';$('docSign').checked=false;loadAdminDocs();}
 }
 async function deleteDoc(id){ if(!confirm('Slet filen?')) return; await fetch('/api/admin/docs/'+encodeURIComponent(docUser)+'/'+id,{method:'DELETE'}); loadAdminDocs(); }
 // ── Skift kodeord ─────────────────────────────────────────────────────────────
