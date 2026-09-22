@@ -555,7 +555,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20260922-2124';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20260922-2141';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -1085,7 +1085,35 @@ async function crmResearch(id){
     const d=await r.json(); if(!r.ok) throw d.error||'Fejl';
     boks.textContent=d.research; boks.style.display='';
     btn.textContent='Find info igen';
-  }catch(e){ btn.textContent='Prøv igen'; const m=$('msg'+id); if(m){m.style.color='var(--red)';m.textContent=e.toString();} }
+  }catch(e){
+    // Researchen tager tit over et minut, og Safari dropper selv fetch'et ("TypeError:
+    // Load failed") LÆNGE FØR serveren er færdig — men serveren GØR den færdig og gemmer
+    // svaret (set 22/9-2026: Alex fik fejl kl. 21.39, og researchen lå gemt kl. 21.39.49).
+    // Derfor: giv ikke op på en netværksfejl. Spørg efter lead'et til svaret dukker op.
+    const m=$('msg'+id);
+    if(m){m.style.color='var(--muted)';m.textContent='Forbindelsen slap op, men søgningen kører videre. Venter på svar…';}
+    btn.textContent='Venter på svaret…';
+    let fundet=false;
+    for(let i=0;i<30 && !fundet;i++){            // op til 2,5 minut
+      await new Promise(r=>setTimeout(r,5000));
+      try{
+        const lr=await fetch('/api/admin/crm');
+        if(!lr.ok) continue;
+        const leads=await lr.json();
+        const l=(Array.isArray(leads)?leads:leads.leads||[]).find(x=>String(x.id)===String(id));
+        if(l && l.research){
+          boks.textContent=l.research; boks.style.display='';
+          btn.textContent='Find info igen';
+          if(m){m.textContent='';}
+          fundet=true;
+        }
+      }catch(_){ /* prøv igen */ }
+    }
+    if(!fundet){
+      btn.textContent='Prøv igen';
+      if(m){m.style.color='var(--red)';m.textContent='Kunne ikke hente svaret: '+e.toString();}
+    }
+  }
   btn.disabled=false;
 }
 
