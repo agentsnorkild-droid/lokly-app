@@ -555,7 +555,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20260920-1654';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20260922-2124';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -1131,6 +1131,7 @@ function renderCustomers(custs){
         <button class="btn-icon" title="Se beskeder" style="font-size:12px;width:auto;padding:0 8px" onclick="openHistory('${esc(c.username)}','${esc(c.company)}')">Beskeder</button>
         <button class="btn-icon" title="Dokumenter" style="font-size:12px;width:auto;padding:0 8px" onclick="openDocs('${esc(c.username)}','${esc(c.company)}')">Filer</button>
         <button class="btn-icon" title="Hændelser" style="font-size:12px;width:auto;padding:0 8px" onclick="openEvents('${esc(c.username)}','${esc(c.company)}')">Hændelser</button>
+        <button class="btn-icon" title="Automatik: hvad vi selv har gjort" style="font-size:12px;width:auto;padding:0 8px" onclick="openAutomatik('${esc(c.username)}','${esc(c.company)}')">Automatik</button>
         <button class="btn-icon" title="Nulstil kode" onclick="resetPw('${esc(c.username)}','${esc(c.company)}')">🔑</button>
         <button class="btn-icon" title="Rediger" data-c="${esc(JSON.stringify(c))}" onclick="openEditModal(JSON.parse(this.dataset.c))">✏️</button>
         <button class="btn-icon danger" title="Slet" onclick="deleteCustomer('${esc(c.username)}','${esc(c.company)}')">🗑</button>
@@ -1297,7 +1298,8 @@ function openCustomer(username,company){
   const u=esc(username), c=esc(company);
   $('custActions').innerHTML=`<button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openHistory('${u}','${c}')">Beskeder</button>
     <button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openDocs('${u}','${c}')">Filer</button>
-    <button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openEvents('${u}','${c}')">Hændelser</button>`;
+    <button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openEvents('${u}','${c}')">Hændelser</button>
+    <button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openAutomatik('${u}','${c}')">Automatik</button>`;
   $('custModal').classList.add('open');
   renderCustomerRequests();
   loadAdminRequests();
@@ -1419,6 +1421,22 @@ async function openEvents(username,company){
     const labels={henvendelse:'Henvendelse',opkald:'Opkald',tilbud:'Tilbud',booking:'Booking',opgave:'Opgave',lead:'Lead',lager:'Lager',andet:'Andet'};
     $('histSub').textContent=evs.length?evs.length+' hændelser, nyeste øverst':'Ingen hændelser endnu. Kundens systemer sender dem med api-nøglen.';
     $('histBody').innerHTML=evs.map(e=>`<div class="ov-item"><b>${labels[e.type]||e.type}</b>${e.text?': '+esc(e.text):''}<br><small>${fmtTs(e.ts)}${e.source?' · '+esc(e.source):''}</small></div>`).join('');
+  }catch(e){$('histSub').textContent='Kunne ikke hente.';}
+}
+// Alex' driftslog: hvad SYSTEMET selv har gjort for kunden (ordre i telefonen 22/9-2026).
+// Adskilt fra Hændelser, som er kundens egen værdiopgørelse med "minutter sparet".
+async function openAutomatik(username,company){
+  $('histTitle').textContent='Automatik: '+company; $('histSub').textContent='Henter…'; $('histBody').innerHTML=''; $('histModal').classList.add('open');
+  try{const r=await fetch('/api/admin/automatik/'+encodeURIComponent(username)); const rk=await r.json();
+    const labels={morgenstatus:'Morgenstatus sendt',paamindelse:'Påmindelse sendt',mail:'Mail',push:'Push-besked sendt',sms:'SMS sendt',andet:'Automatisk handling'};
+    $('histSub').textContent=rk.length?rk.length+' automatiske handlinger, nyeste øverst':'Ingen automatiske handlinger logget endnu.';
+    $('histBody').innerHTML=rk.map(e=>{
+      const fejlet=/^(IKKE sendt|FEJLEDE)/.test(e.detalje||'');
+      const ekstra=[e.grund?'grund: '+esc(e.grund):'',e.til?esc(e.til):'',
+                    (e.push!==undefined?e.push+' enhed(er)':''),
+                    (e.dage_uden_svar!==undefined?e.dage_uden_svar+' dage uden svar':'')].filter(Boolean).join(' · ');
+      return `<div class="ov-item"${fejlet?' style="border-left:3px solid var(--red);padding-left:8px"':''}><b>${labels[e.handling]||esc(e.handling)}</b>${e.detalje?': '+esc(e.detalje):''}<br><small>${fmtTs(e.ts)}${ekstra?' · '+ekstra:''}</small></div>`;
+    }).join('');
   }catch(e){$('histSub').textContent='Kunne ikke hente.';}
 }
 async function openHistory(username,company){
