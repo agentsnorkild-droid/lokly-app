@@ -260,6 +260,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 .req-pane .stat-card{min-width:0;padding:14px 8px}
 .req-pane .stat-num{font-size:26px}
 .req-pane .stat-label{font-size:11px}
+
+/* ── Kundeside (fuld skaerm) — 1/10-2026 ───────────────────────────────────── */
+.cust-page{position:fixed;inset:0;background:var(--bg,#0f1115);z-index:120;display:none;flex-direction:column}
+.cust-page.open{display:flex}
+.cust-head{display:flex;align-items:center;gap:12px;padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.cust-back{width:38px;height:38px;flex-shrink:0;border-radius:10px;border:1px solid var(--border);background:var(--surface);
+  color:var(--text);font-size:20px;line-height:1;cursor:pointer}
+.cust-back:active{transform:scale(.94)}
+.cust-head-txt h2{margin:0;font-size:19px;line-height:1.2}
+.cust-sub{font-size:13px;color:var(--text2);margin-top:2px}
+.cust-tabs{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--border);
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.cust-tabs::-webkit-scrollbar{display:none}
+.cust-tab{white-space:nowrap;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);
+  color:var(--text2);font-size:14px;font-weight:600;cursor:pointer}
+.cust-tab.active{background:var(--cyan);border-color:var(--cyan);color:#06242b}
+.cust-tab .dot{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:999px;
+  background:var(--orange);color:#2a1500;font-size:11px;line-height:18px;text-align:center}
+.cust-tab.active .dot{background:#06242b;color:var(--cyan)}
+.cust-body{flex:1;overflow-y:auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:10px}
+.cust-info-row{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);font-size:14px}
+.cust-info-row b{color:var(--text2);font-weight:600;flex-shrink:0}
+.cust-info-row span{text-align:right;word-break:break-word}
+.cust-kontrakt{border-radius:12px;padding:14px;border:1px solid var(--border);background:var(--surface)}
+.cust-kontrakt.ok{border-color:var(--green,#34d399)}
+.cust-kontrakt.vent{border-color:var(--orange)}
+.cust-body button:not(.cust-tab):not(.btn-icon){padding:12px 16px;border-radius:11px;border:none;background:var(--cyan);
+  color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+.cust-body button.sekundaer{background:var(--surface);color:var(--text2);border:1px solid var(--border)}
+.cust-body input[type=text],.cust-body input:not([type]){width:100%;padding:11px 12px;border-radius:10px;
+  border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px}
+.cust-body input[type=file]{font-size:13px;color:var(--text2)}
 </style>
 </head>
 <body>
@@ -489,16 +521,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
   </div>
 </div>
 
-<!-- Modal: Kunde (admin) -->
-<div class="modal-overlay" id="custModal" onclick="if(event.target===this)closeCustomer()">
-  <div class="modal" style="max-height:88vh;display:flex;flex-direction:column">
-    <h2 id="custTitle">Kunde</h2>
-    <p class="modal-sub" id="custSub"></p>
-    <div class="customer-actions" id="custActions" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
-    <div class="admin-section-header"><h3 style="margin:0">Ønsker og henvendelser</h3></div>
-    <div class="req-list" id="custReqList" style="overflow-y:auto;flex:1;padding:4px 0"><div class="req-empty">Henter…</div></div>
-    <div class="modal-actions"><button class="btn-primary" onclick="closeCustomer()">Luk</button></div>
+<!-- Kundeside (admin) — fuld skaerm med faner. Alex 1/10-2026: "naar jeg trykker paa
+     en kunde skal hele tabben aabne op ... en pil tilbage ... faner mere overskueligt". -->
+<div id="custPage" class="cust-page">
+  <div class="cust-head">
+    <button class="cust-back" onclick="closeCustomer()" aria-label="Tilbage til kundelisten">←</button>
+    <div class="cust-head-txt"><h2 id="custTitle">Kunde</h2><div class="cust-sub" id="custSub"></div></div>
   </div>
+  <div class="cust-tabs" id="custTabs"></div>
+  <div class="cust-body" id="custBody"><div class="req-empty">Henter…</div></div>
 </div>
 
 <!-- Modal: Dokumenter (admin) -->
@@ -555,7 +586,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261001-1354';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261001-1534';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -1147,6 +1178,7 @@ async function loadAdminData(){
     await loadAdminRequests();
     const [sr,cr]=await Promise.all([fetch('/api/admin/stats'),fetch('/api/admin/customers')]);
     const stats=await sr.json(), custs=await cr.json();
+    adminCustomers=custs;   // kundesiden slaar op her (1/10-2026)
     $('statActive').textContent=stats.active;
     $('statMrr').textContent=(stats.mrr||0).toLocaleString('da-DK');
     const u=[]; if(stats.opstart) u.push(stats.opstart.toLocaleString('da-DK')+' i opstart');
@@ -1163,7 +1195,7 @@ function kontraktLinje(c){
   const k=c.kontrakt||{status:'ingen'};
   // Klik gaar til Filer, hvor selve PDF'en og underskriften ligger. stopPropagation,
   // ellers aabner kundekortets eget onclick kunden i stedet.
-  const aabn=`onclick="event.stopPropagation();openDocs('${esc(c.username)}','${esc(c.company)}')"`;
+  const aabn=`onclick="event.stopPropagation();openCustomer('${esc(c.username)}','${esc(c.company)}');setTimeout(()=>visCustFane('kontrakt'),0)"`;
   const dato=ts=>ts?new Date(ts*1000).toLocaleDateString('da-DK',{day:'numeric',month:'short',year:'numeric'}):'';
   const flere=k.antal>1?` (${k.antal} dokumenter)`:'';
   if(k.status==='underskrevet'){
@@ -1204,12 +1236,6 @@ function renderCustomers(custs){
       <div class="customer-info"><div class="co">${esc(c.company)}</div><div class="meta">${esc(meta)}</div>${aftale}${kontrakt}</div>
       <span class="customer-plan plan-${c.plan||'basic'}">${pLabel}</span>
       <div class="customer-actions" onclick="event.stopPropagation()">
-        <button class="btn-icon" title="Se beskeder" style="font-size:12px;width:auto;padding:0 8px" onclick="openHistory('${esc(c.username)}','${esc(c.company)}')">Beskeder</button>
-        <button class="btn-icon" title="Dokumenter" style="font-size:12px;width:auto;padding:0 8px" onclick="openDocs('${esc(c.username)}','${esc(c.company)}')">Filer</button>
-        <button class="btn-icon" title="Hændelser" style="font-size:12px;width:auto;padding:0 8px" onclick="openEvents('${esc(c.username)}','${esc(c.company)}')">Hændelser</button>
-        <button class="btn-icon" title="Automatik: hvad vi selv har gjort" style="font-size:12px;width:auto;padding:0 8px" onclick="openAutomatik('${esc(c.username)}','${esc(c.company)}')">Automatik</button>
-        <button class="btn-icon" title="Nulstil kode" onclick="resetPw('${esc(c.username)}','${esc(c.company)}')">🔑</button>
-        <button class="btn-icon" title="Rediger" data-c="${esc(JSON.stringify(c))}" onclick="openEditModal(JSON.parse(this.dataset.c))">✏️</button>
         <button class="btn-icon danger" title="Slet" onclick="deleteCustomer('${esc(c.username)}','${esc(c.company)}')">🗑</button>
       </div>
     </div>`;
@@ -1355,7 +1381,7 @@ async function sendRequest(type){
   }catch(e){$('reqMsg').style.color='var(--red)';$('reqMsg').textContent=e||'Kunne ikke sende. Prøv igen.';}
   $('reqBtnOenske').disabled=false;$('reqBtnKontakt').disabled=false;
 }
-let adminReqItems=[], custOpen=null;
+let adminReqItems=[], custOpen=null, adminCustomers=[];
 async function loadAdminRequests(){
   try{const r=await fetch('/api/requests');if(!r.ok)return;adminReqItems=await r.json();
     if(custOpen) renderCustomerRequests();
@@ -1363,24 +1389,136 @@ async function loadAdminRequests(){
 }
 function renderCustomerRequests(){
   if(!custOpen) return;
+  const liste=$('custReqList'); if(!liste) return;   // vises kun paa Oensker-fanen
   const items=adminReqItems.filter(x=>x.username===custOpen.username);
-  $('custReqList').innerHTML=items.length?items.map(x=>reqCard(x,true)).join(''):'<div class="req-empty">Ingen ønsker fra denne kunde endnu.</div>';
-  const openN=items.filter(x=>x.status==='modtaget'||x.status==='i_gang').length;
-  $('custSub').textContent=(openN?(openN===1?'1 åbent':`${openN} åbne`):'Ingen åbne')+' · '+items.length+' i alt';
+  liste.innerHTML=items.length?items.map(x=>reqCard(x,true)).join(''):'<div class="req-empty">Ingen ønsker fra denne kunde endnu.</div>';
+  tegnCustFaner();   // antallet i fanen kan have aendret sig
 }
+// ── Kundeside: én side pr. kunde med faner (Alex 1/10-2026) ──────────────────
+let custFane='info', custData=null;
+const CUST_FANER=[
+  {id:'info',     navn:'Info'},
+  {id:'oensker',  navn:'Ønsker'},
+  {id:'kontrakt', navn:'Kontrakt'},
+  {id:'filer',    navn:'Filer'},
+  {id:'beskeder', navn:'Beskeder'},
+  {id:'aktivitet',navn:'Aktivitet'},
+];
 function openCustomer(username,company){
   custOpen={username,company};
+  custData=(adminCustomers||[]).find(c=>c.username===username)||{username,company};
+  docUser=username;
   $('custTitle').textContent=company;
-  const u=esc(username), c=esc(company);
-  $('custActions').innerHTML=`<button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openHistory('${u}','${c}')">Beskeder</button>
-    <button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openDocs('${u}','${c}')">Filer</button>
-    <button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openEvents('${u}','${c}')">Hændelser</button>
-    <button class="btn-icon" style="font-size:12px;width:auto;padding:0 8px" onclick="openAutomatik('${u}','${c}')">Automatik</button>`;
-  $('custModal').classList.add('open');
-  renderCustomerRequests();
+  custFane='info';
+  $('custPage').classList.add('open');
+  document.body.style.overflow='hidden';
+  tegnCustFaner(); visCustFane('info');
   loadAdminRequests();
 }
-function closeCustomer(){custOpen=null;$('custModal').classList.remove('open');loadAdminData();}
+function closeCustomer(){
+  custOpen=null; $('custPage').classList.remove('open');
+  document.body.style.overflow=''; loadAdminData();
+}
+function tegnCustFaner(){
+  const u=custOpen?custOpen.username:'';
+  const aabne=(adminReqItems||[]).filter(r=>r.username===u&&(r.status==='modtaget'||r.status==='i_gang')).length;
+  $('custTabs').innerHTML=CUST_FANER.map(f=>{
+    const prik=(f.id==='oensker'&&aabne)?`<span class="dot">${aabne}</span>`:'';
+    return `<button class="cust-tab${f.id===custFane?' active':''}" onclick="visCustFane('${f.id}')">${f.navn}${prik}</button>`;
+  }).join('');
+  const k=(custData&&custData.kontrakt)||{status:'ingen'};
+  const txt={underskrevet:'Kontrakt underskrevet',venter:'Kontrakt venter på underskrift',ingen:'Ingen kontrakt sendt'}[k.status];
+  $('custSub').textContent=(aabne?`${aabne} ${aabne===1?'åbent ønske':'åbne ønsker'} · `:'')+txt;
+}
+function visCustFane(id){
+  custFane=id; tegnCustFaner();
+  const b=$('custBody'); b.innerHTML='<div class="req-empty">Henter…</div>';
+  const u=custOpen.username, c=custOpen.company;
+  if(id==='info')      return custInfo();
+  if(id==='oensker')   { b.innerHTML='<div class="req-list" id="custReqList"></div>'; return renderCustomerRequests(); }
+  if(id==='kontrakt')  return custKontrakt();
+  if(id==='filer')     return custFiler();
+  if(id==='beskeder')  return custListe('/api/admin/history/'+encodeURIComponent(u),'beskeder');
+  if(id==='aktivitet') return custAktivitet();
+}
+function custInfo(){
+  const c=custData||{};
+  const kr=n=>Number(String(n).replace(/\./g,'').replace(',','.')||0).toLocaleString('da-DK');
+  const r=(navn,vaerdi)=>vaerdi?`<div class="cust-info-row"><b>${navn}</b><span>${esc(vaerdi)}</span></div>`:'';
+  $('custBody').innerHTML=
+    r('Firma',c.company)+r('Kontakt',c.kontakt)+r('Telefon',c.phone)+r('E-mail',c.email)+
+    r('Adresse',c.address)+r('Hjemmeside',c.website_url)+
+    r('Pris',c.maaned_pris?(c.betaler===false?kr(c.maaned_pris)+' kr./md når de siger ja':kr(c.maaned_pris)+' kr./md'):'')+
+    r('Opstart',c.opstart_pris?kr(c.opstart_pris)+' kr.':'')+
+    r('Startdato',c.startdato)+r('Aftale',c.aftale)+r('Næste møde',c.naeste_moede)+
+    r('Login',c.username)+r('Intern note',c.intern_note)+
+    `<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+       <button onclick='openEditModal(JSON.parse(this.dataset.c))' data-c="${esc(JSON.stringify(c))}">Rediger</button>
+       <button class="sekundaer" onclick="resetPw('${esc(c.username)}','${esc(c.company)}')">Nulstil kode</button>
+     </div>`;
+}
+function custKontrakt(){
+  const k=(custData&&custData.kontrakt)||{status:'ingen'};
+  const dato=ts=>ts?new Date(ts*1000).toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'}):'';
+  let kort='';
+  if(k.status==='underskrevet'){
+    kort=`<div class="cust-kontrakt ok"><b style="color:var(--green,#34d399)">✓ Underskrevet</b>
+      <div style="margin-top:8px;font-size:14px">${esc(k.titel||'')}</div>
+      <div style="margin-top:6px;font-size:13px;color:var(--text2)">Af ${esc(k.navn||'ukendt')} · ${dato(k.ts)}${k.metode?'<br>'+esc(k.metode):''}</div></div>`;
+  } else if(k.status==='venter'){
+    const dage=k.sendt_ts?Math.floor((Date.now()/1000-k.sendt_ts)/86400):0;
+    kort=`<div class="cust-kontrakt vent"><b style="color:var(--orange)">Venter på underskrift</b>
+      <div style="margin-top:8px;font-size:14px">${esc(k.titel||'')}</div>
+      <div style="margin-top:6px;font-size:13px;color:var(--text2)">Sendt ${dato(k.sendt_ts)}${dage?` — ${dage} ${dage===1?'dag':'dage'} siden`:''}</div></div>`;
+  } else {
+    kort=`<div class="cust-kontrakt"><b>Ingen kontrakt sendt</b>
+      <div style="margin-top:8px;font-size:13px;color:var(--text2)">Læg aftalen op nedenfor og sæt flueben i "kræver underskrift".
+      Så skriver kunden under i appen med en engangskode på sms.</div></div>`;
+  }
+  $('custBody').innerHTML=kort+custUploadHtml(true)+'<div id="docAdminList" style="display:flex;flex-direction:column;gap:8px"></div>';
+  loadAdminDocs();
+}
+function custFiler(){
+  $('custBody').innerHTML=custUploadHtml(false)+'<div id="docAdminList" style="display:flex;flex-direction:column;gap:8px"></div>';
+  loadAdminDocs();
+}
+function custUploadHtml(kontrakt){
+  return `<div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin:14px 0">
+    <input id="docFileTitle" placeholder="${kontrakt?'Titel, fx Konsulentaftale':'Titel på filen'}" style="width:100%;margin-bottom:8px">
+    <input id="docFile" type="file" style="width:100%;margin-bottom:8px">
+    <label style="display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:10px">
+      <input id="docSign" type="checkbox"${kontrakt?' checked':''}> Kræver underskrift</label>
+    <button onclick="uploadDoc()" style="width:100%">Læg op</button>
+    <div id="docMsg" style="font-size:13px;margin-top:8px;color:var(--text2)"></div></div>`;
+}
+async function custListe(url,hvad){
+  try{
+    const r=await fetch(url); const d=await r.json();
+    if(!d.length){$('custBody').innerHTML=`<div class="req-empty">Ingen ${hvad} endnu.</div>`;return;}
+    $('custBody').innerHTML=d.map(m=>`<div class="msg ${m.role==='user'?'user':'agent'}" style="max-width:92%">${esc(m.content)}<div style="font-size:11px;opacity:.7;margin-top:4px">${m.ts?fmtTs(m.ts):''}</div></div>`).join('');
+    $('custBody').scrollTop=$('custBody').scrollHeight;
+  }catch(e){$('custBody').innerHTML='<div class="req-empty">Kunne ikke hente.</div>';}
+}
+// Haendelser (kundens egen vaerdi) og Automatik (hvad vi selv har gjort) er bevidst
+// to ting — de vises hver for sig, men paa samme fane, saa fanerækken ikke bliver lang.
+async function custAktivitet(){
+  const u=encodeURIComponent(custOpen.username);
+  const [ev,au]=await Promise.all([
+    fetch('/api/admin/events/'+u).then(r=>r.ok?r.json():[]).catch(()=>[]),
+    fetch('/api/admin/automatik/'+u).then(r=>r.ok?r.json():[]).catch(()=>[]),
+  ]);
+  const evL={henvendelse:'Henvendelse',opkald:'Opkald',tilbud:'Tilbud',booking:'Booking',opgave:'Opgave',lead:'Lead',lager:'Lager',andet:'Andet'};
+  const auL={morgenstatus:'Morgenstatus sendt',paamindelse:'Påmindelse sendt',mail:'Mail',push:'Push-besked sendt',sms:'SMS sendt',andet:'Automatisk handling'};
+  const afsnit=(titel,hjaelp,rows)=>`<h3 style="margin:14px 0 6px;font-size:15px">${titel}</h3>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${hjaelp}</div>`+
+    (rows.length?rows.join(''):'<div class="req-empty">Intet endnu.</div>');
+  $('custBody').innerHTML=
+    afsnit('Hændelser','Det kundens egne systemer har registreret.',
+      ev.map(e=>`<div class="ov-item"><b>${evL[e.type]||esc(e.type)}</b>${e.text?': '+esc(e.text):''}<br><small>${fmtTs(e.ts)}${e.source?' · '+esc(e.source):''}</small></div>`))+
+    afsnit('Automatik','Det Lokly selv har gjort for kunden.',
+      au.map(e=>{const fejlet=/^(IKKE sendt|FEJLEDE)/.test(e.detalje||'');
+        return `<div class="ov-item"${fejlet?' style="border-left:3px solid var(--red);padding-left:8px"':''}><b>${auL[e.handling]||esc(e.handling)}</b>${e.detalje?': '+esc(e.detalje):''}<br><small>${fmtTs(e.ts)}</small></div>`;}));
+}
 function adminActions(r){
   if(r.status==='modtaget') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><small class="req-meta" style="margin:0 0 -4px">Note til agenten (kunden ser den ikke)</small><input id="rn${r.id}" placeholder="Fx: hold det simpelt, brug det vi har" value="${esc(r.alex_note||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'i_gang')">Godkend og sæt i gang</button><button style="background:var(--surface);color:var(--red);border:1px solid var(--red)" onclick="adminSet(${r.id},'afvist')">Afvis</button></div></div>`;
   if(r.status==='i_gang') return `<div class="req-admin" style="flex-direction:column;align-items:stretch"><small class="req-meta" style="margin:0 0 -4px">Status til kunden (vises i appen)</small><input id="rv${r.id}" placeholder="Hvad er bygget? (vises til kunden)" value="${esc(r.svar||'')}"><div style="display:flex;gap:8px"><button style="flex:1" onclick="adminSet(${r.id},'faerdig')">Sæt til færdig</button><button style="background:var(--surface);color:var(--text2);border:1px solid var(--border)" onclick="adminSet(${r.id},'modtaget')">Tilbage til venter</button></div></div>`;
