@@ -335,6 +335,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <button class="btn-new-chat" id="btnNewChat" onclick="newChat()" title="Ny chat">＋</button>
     </div>
   </div>
+  <div id="devbar" hidden style="display:flex;align-items:center;gap:10px;background:#1d2a3a;color:#fff;font-size:12.5px;padding:5px 12px"><b>Dev</b><span>Visning</span><button id="devWeb" onclick="devVisning('web')" style="font:inherit;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:#fff;color:#1d2a3a;cursor:pointer">Web</button><button id="devMobil" onclick="devVisning('mobil')" style="font:inherit;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer">Mobil</button><span style="flex:1"></span><button onclick="location.reload()" style="font:inherit;padding:3px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer">↻ Opdater</button></div>
   <div id="nyVersion" onclick="location.reload(true)" style="display:none;position:fixed;bottom:var(--nav-h);left:0;right:0;z-index:200;background:var(--cyan);color:#fff;padding:12px 14px;font-size:14px;font-weight:600;text-align:center;cursor:pointer;box-shadow:0 -2px 12px rgba(0,0,0,.12)">Ny version klar — tryk her for at opdatere</div>
 <div class="tab-content">
 
@@ -390,11 +391,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 
     <div class="tab-pane req-pane" id="tabDashboard">
       <div class="stats-row">
-        <div class="stat-card"><div class="stat-num" id="ovOpen">—</div><div class="stat-label">Åbne ønsker</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovOpen">—</div><div class="stat-label">Ændringer i gang</div></div>
         <div class="stat-card"><div class="stat-num" id="ovDone">—</div><div class="stat-label">Bygget til dig</div></div>
         <div class="stat-card"><div class="stat-num" id="ovMsgs">—</div><div class="stat-label">Beskeder</div></div>
       </div>
-      <div class="req-form" id="ovLinksBox"><h3>Dine systemer</h3><p>Det, der kører for jer. Tryk <b>Anmod om ændring</b> på et system, eller bed om noget helt nyt.</p><div class="sys-grid" id="ovLinks"></div></div>
+      <div class="req-form" id="ovLinksBox"><h3>Dine systemer</h3><p>Det, der kører for jer. Tryk på et system for at skrive ændringer til det, eller på plus for at få bygget noget helt nyt.</p><div class="sys-grid" id="ovLinks"></div></div>
       <div class="req-form" id="ovOnbBox" hidden><h3>Sådan kommer I i gang</h3><div class="req-list" id="ovOnb"></div></div>
       <div class="req-form" id="ovUgeBox">
         <h3>Det er sket i jeres systemer de sidste 7 dage</h3>
@@ -601,7 +602,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261001-1541';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261009-1524';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -667,7 +668,8 @@ async function enterApp(data){
   } else {
     $('headerActions').style.display='';
     // Customer — show Chat + Overblik + Indstillinger
-    $('navAdmin').hidden=true; $('navDashboard').hidden=false; $('navRequests').hidden=false; $('navDocs').hidden=false; updateReqBadge(data.open_requests||0); loadRequests();
+    if((data.company||'')==='Testfirma ApS'&&!window.frameElement){$('devbar').hidden=false;if(localStorage.getItem('lokly_visning')==='mobil')devVisning('mobil');}
+    $('navAdmin').hidden=true; $('navDashboard').hidden=false; $('navRequests').hidden=true; $('navDocs').hidden=false; updateReqBadge(data.open_requests||0); loadRequests();
     $('settingsReadOnly').style.display='none'; $('settingsEditable').style.display='';
     $('setCompanyRO').textContent=data.company;
     $('editEmail').value=data.email||''; $('editPhone').value=data.phone||'';
@@ -1587,8 +1589,8 @@ async function loadOverview(){
     SYSTEMS=o.links.map(l=>({navn:l.navn||l.url,url:l.url}));fillReqSystem();
     const openBy=n=>o.open.filter(r=>(r.system||'')===n).length, doneBy=n=>o.done.filter(r=>(r.system||'')===n).length;
     $('ovLinks').innerHTML=SYSTEMS.map((l,i)=>{const n=openBy(l.navn),d=doneBy(l.navn);let host='';try{host=new URL(l.url).host}catch(e){host=l.url}
-      return `<div class="sys-card"><h4>${esc(l.navn)}</h4><div class="sys-url">${esc(host)}</div><span class="sys-chip ${n?'open':''}">${n?n+' ændring'+(n>1?'er':'')+' i gang':(d?d+' ændring'+(d>1?'er':'')+' leveret':'Kører')}</span><div class="sys-actions"><a href="${esc(l.url)}" target="_blank" rel="noopener">Åbn</a><button onclick="startRequest(SYSTEMS[${i}].navn)">Anmod om ændring</button><button class="fejl" onclick="startRequest(SYSTEMS[${i}].navn,'fejl')">Meld fejl</button></div></div>`;}).join('')
-      +`<div class="sys-card sys-new" onclick="startRequest('')"><div><b>+ Nyt system eller service</b><br><small>Fx en booking-side, en telefonist eller en app. Beskriv det, så vender Alex tilbage.</small></div></div>`;
+      return `<div class="sys-card sys-click" onclick="openSystem(${i})"><h4>${esc(l.navn)}</h4><div class="sys-url">${esc(host)}</div><span class="sys-chip ${n?'open':''}">${n?n+' ændring'+(n>1?'er':'')+' i gang':(d?d+' ændring'+(d>1?'er':'')+' leveret':'Kører')}</span><div class="sys-actions"><a href="${esc(l.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Åbn</a><span style="font-size:13px;color:var(--text2)">Skriv en ændring ›</span></div></div>`;}).join('')
+      +`<div class="sys-card sys-new" onclick="openSystem(-1)"><div><b>+ Nyt system</b><br><small>Fx en booking-side, en telefonist eller en app. Beskriv det, så vender Alex tilbage med input, før det bygges.</small></div></div>`;
     const lev=[...o.done.map(d=>`<div class="ov-item">${esc(d.svar||d.text)}<br><small>Ønske #${d.id} · færdigt ${fmtTs(d.updated)}</small></div>`),...o.leverancer.map(l=>`<div class="ov-item">${esc(l)}</div>`)];
     $('ovLeverancer').innerHTML=lev.length?lev.join(''):'<div class="req-empty">Intet endnu. Det første, vi bygger, dukker op her.</div>';
     $('ovAftaleBox').hidden=!o.aftale;$('ovAftale').textContent=o.aftale||'';
@@ -1598,7 +1600,7 @@ async function loadOverview(){
       if(x.knap&&x.handling&&!x.done){
         const h=x.handling;
         const klik=/^https?:\/\//.test(h)?`window.open('${esc(h)}','_blank')`
-          :(h==='oenske'?`switchTab('Requests',$('navRequests'))`
+          :(h==='oenske'?`openSystem(-1)`
           :(h==='indstillinger'?`switchTab('Settings',$('navSettings'))`
           :(h==='dokumenter'?`switchTab('Docs',$('navDocs'))`
           :(h==='overblik'?`switchTab('Dashboard',$('navDashboard'))`:''))));
@@ -1785,6 +1787,40 @@ async function changePassword(){
   const d=await r.json(); m.style.color=r.ok?'var(--green)':'var(--red)'; m.textContent=r.ok?'Kodeordet er skiftet.':(d.error||'Fejl');
   if(r.ok){$('pwOld').value='';$('pwNew').value='';}
 }
+</script>
+<div id="sysSheet" class="sys-sheet" hidden onclick="if(event.target===this)closeSystem()"><div class="sys-sheet-in">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><h3 id="ssTitle" style="margin:0;flex:1;font-size:18px"></h3><button onclick="closeSystem()" style="background:none;border:0;font-size:22px;cursor:pointer;color:var(--text2)">✕</button></div>
+  <p id="ssSub" style="margin:0 0 12px;color:var(--text2);font-size:13px"></p>
+  <textarea id="ssText" style="width:100%;min-height:110px;padding:12px;border:1px solid var(--border);border-radius:12px;font:inherit;font-size:15px;background:#fff;color:var(--text)"></textarea>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap"><button onclick="$('ssFile').click()" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text2);cursor:pointer">Vedhæft billede</button><input type="file" id="ssFile" accept="image/*" multiple style="display:none" onchange="reqFiles(this.files);$('ssFileInfo').textContent=$('reqFileInfo').textContent"><span id="ssFileInfo" style="font-size:12px;color:var(--text2)"></span><span style="flex:1"></span><button id="ssFejl" onclick="sendSystem('fejl')" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer;font:inherit">Meld fejl</button><button id="ssSend" onclick="sendSystem('oenske')" style="padding:10px 16px;border-radius:10px;border:0;background:var(--green,#12564b);color:#fff;cursor:pointer;font:inherit;font-weight:700">Send</button></div>
+  <div id="ssMsg" style="font-size:13px;color:var(--green);min-height:18px;margin-top:4px"></div>
+  <div class="req-list" id="ssList" style="margin-top:10px"></div>
+</div></div>
+<style>.sys-sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:60;display:flex;align-items:flex-end;justify-content:center}.sys-sheet[hidden]{display:none}.sys-sheet-in{background:var(--card,#fff);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px}@media(min-width:900px){.sys-sheet{align-items:center}.sys-sheet-in{border-radius:18px}}.sys-card.sys-click{cursor:pointer}.sys-card.sys-click:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}</style>
+<script>
+let SS_SYS=null;
+async function openSystem(i){SS_SYS=(i>=0&&SYSTEMS[i])?SYSTEMS[i].navn:'';reqAttach=[];$('ssFileInfo').textContent='';$('ssMsg').textContent='';$('ssText').value='';
+  $('ssTitle').textContent=SS_SYS||'Nyt system';
+  $('ssSub').textContent=SS_SYS?'Skriv hvad der skal ændres i '+SS_SYS+'. Det bliver bygget med det samme, og du får besked her, når det er klar.':'Beskriv hvad I vil have bygget. Alex vender tilbage med input, før det sættes i gang.';
+  $('ssText').placeholder=SS_SYS?'Fx: Der skal være et felt til lejlighedsnummer på ordren.':'Fx: En side hvor kunderne selv kan booke en tid.';
+  $('ssFejl').hidden=!SS_SYS;$('ssSend').textContent=SS_SYS?'Send ændring':'Send til Alex';
+  $('sysSheet').hidden=false;setTimeout(()=>$('ssText').focus(),50);loadSystemList();}
+function closeSystem(){$('sysSheet').hidden=true}
+async function loadSystemList(){try{const r=await fetch('/api/requests');if(!r.ok)return;const items=(await r.json()).filter(x=>SS_SYS?(x.system||'')===SS_SYS:!(x.system||''));
+  $('ssList').innerHTML=items.length?items.map(x=>reqCard(x,false)).join(''):'<div class="req-empty">'+(SS_SYS?'Ingen ændringer endnu.':'Ingen forslag endnu.')+'</div>';}catch(e){}}
+async function sendSystem(type){const text=$('ssText').value.trim();if(!text){$('ssMsg').style.color='var(--red)';$('ssMsg').textContent='Skriv først hvad det drejer sig om.';return}
+  $('ssSend').disabled=true;$('ssFejl').disabled=true;
+  try{const files=reqAttach.length?await filesToBase64(reqAttach):[];const r=await fetch('/api/requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,text,files,system:SS_SYS})});const d=await r.json();if(!r.ok)throw d.error;
+    $('ssText').value='';reqAttach=[];$('ssFileInfo').textContent='';$('ssMsg').style.color='var(--green)';$('ssMsg').textContent=SS_SYS?(type==='fejl'?'Fejlen er meldt og rettes nu.':'Modtaget. Ændringen bygges nu, du får besked når den er klar.'):'Sendt til Alex. Du hører fra ham.';
+    loadSystemList();loadOverview();}catch(e){$('ssMsg').style.color='var(--red)';$('ssMsg').textContent=e||'Kunne ikke sende. Prøv igen.'}
+  $('ssSend').disabled=false;$('ssFejl').disabled=false;}
+</script>
+
+<script>
+function devVisning(m){localStorage.setItem('lokly_visning',m);const on=m==='mobil';$('devMobil').style.background=on?'#fff':'transparent';$('devMobil').style.color=on?'#1d2a3a':'#fff';$('devWeb').style.background=on?'transparent':'#fff';$('devWeb').style.color=on?'#fff':'#1d2a3a';
+  let f=document.getElementById('devFrame');
+  if(on){if(!f){f=document.createElement('div');f.id='devFrame';f.style.cssText='position:fixed;inset:34px 0 0 0;background:#2b2b2b;display:flex;align-items:center;justify-content:center;z-index:150';f.innerHTML='<iframe src="'+location.pathname+'" style="width:393px;height:852px;max-height:92vh;border:10px solid #111;border-radius:40px;background:#fff"></iframe>';document.body.appendChild(f);}}
+  else if(f){f.remove();}}
 </script>
 </body>
 </html>
