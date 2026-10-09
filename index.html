@@ -391,25 +391,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 
     <div class="tab-pane req-pane" id="tabDashboard">
       <div class="stats-row">
-        <div class="stat-card"><div class="stat-num" id="ovOpen">—</div><div class="stat-label">Ændringer i gang</div></div>
+        <div style="display:none"><div class="stat-card"><div class="stat-num" id="ovOpen">—</div><div class="stat-label">Ændringer i gang</div></div>
         <div class="stat-card"><div class="stat-num" id="ovDone">—</div><div class="stat-label">Bygget til dig</div></div>
-        <div class="stat-card"><div class="stat-num" id="ovMsgs">—</div><div class="stat-label">Beskeder</div></div>
+        <div class="stat-card"><div class="stat-num" id="ovMsgs">—</div></div><div class="stat-label">Beskeder</div></div>
       </div>
       <div class="req-form" id="ovLinksBox"><h3>Dine systemer</h3><div class="sys-grid" id="ovLinks"></div></div>
-      <div class="req-form" id="ovOnbBox" hidden><h3>Tjekliste</h3><div class="req-list" id="ovOnb"></div></div>
+      <div class="req-form" id="ovOnbBox" hidden style="display:none"><h3>Tjekliste</h3><div class="req-list" id="ovOnb"></div></div>
       <div class="req-form" id="ovUgeBox" hidden style="display:none">
         <h3>Det er sket i jeres systemer de sidste 7 dage</h3>
         <div class="stats-row" id="ugStats" style="margin-top:6px"></div>
         <p id="ugSum" style="margin-top:8px"></p>
         <div class="req-list" id="ovTidslinje" style="margin-top:8px"></div>
       </div>
-      <div class="req-form" id="ovForslagBox" hidden><h3>Forslag fra Lokly</h3><div class="req-list" id="ovForslag"></div></div>
-      <div class="req-form" id="ovKonsulent" hidden>
+      <div class="req-form" id="ovForslagBox" hidden style="display:none"><h3>Forslag fra Lokly</h3><div class="req-list" id="ovForslag"></div></div>
+      <div class="req-form" id="ovKonsulent" hidden style="display:none">
         <h3>Næste møde</h3>
         <p id="ovMoede" hidden></p>
       </div>
-      <div class="req-form"><h3>Bygget til dig</h3><div class="req-list" id="ovLeverancer"><div class="req-empty">Intet endnu.</div></div></div>
-      <div class="req-form" id="ovAftaleBox" hidden><h3>Din aftale</h3><p id="ovAftale" style="white-space:pre-wrap;color:var(--text)"></p></div>
+      <div class="req-form" style="display:none"><h3>Bygget til dig</h3><div class="req-list" id="ovLeverancer"><div class="req-empty">Intet endnu.</div></div></div>
+      <div class="req-form" id="ovAftaleBox" hidden style="display:none"><h3>Din aftale</h3><p id="ovAftale" style="white-space:pre-wrap;color:var(--text)"></p></div>
     </div>
 
     <div class="tab-pane req-pane" id="tabRequests">
@@ -1585,7 +1585,7 @@ async function startRequest(system,kind){switchTab('Requests',$('navRequests'));
 async function loadOverview(){
   try{const r=await fetch('/api/overview');if(!r.ok)return;const o=await r.json();
     $('ovOpen').textContent=o.open.length;$('ovDone').textContent=o.done.length+o.leverancer.length;$('ovMsgs').textContent=o.messages;
-    if(o.naeste_moede){$('ovKonsulent').hidden=false;$('ovMoede').hidden=false;$('ovMoede').innerHTML=esc(o.naeste_moede);}else{$('ovKonsulent').hidden=true;$('ovMoede').hidden=true;}
+    if(false){$('ovKonsulent').hidden=false;$('ovMoede').hidden=false;$('ovMoede').innerHTML=esc(o.naeste_moede);}else{$('ovKonsulent').hidden=true;$('ovMoede').hidden=true;}
     SYSTEMS=o.links.map(l=>({navn:l.navn||l.url,url:l.url}));fillReqSystem();
     const openBy=n=>o.open.filter(r=>(r.system||'')===n).length, doneBy=n=>o.done.filter(r=>(r.system||'')===n).length;
     $('ovLinks').innerHTML=SYSTEMS.map((l,i)=>{const n=openBy(l.navn),d=doneBy(l.navn);let host='';try{host=new URL(l.url).host}catch(e){host=l.url}
@@ -1593,8 +1593,8 @@ async function loadOverview(){
       +`<div class="sys-card sys-new" onclick="openSystem(-1)"><div><b>+ Nyt system</b></div></div>`;
     const lev=[...o.done.map(d=>`<div class="ov-item">${esc(d.svar||d.text)}<br><small>Ønske #${d.id} · færdigt ${fmtTs(d.updated)}</small></div>`),...o.leverancer.map(l=>`<div class="ov-item">${esc(l)}</div>`)];
     $('ovLeverancer').innerHTML=lev.length?lev.join(''):'<div class="req-empty">Intet endnu. Det første, vi bygger, dukker op her.</div>';
-    $('ovAftaleBox').hidden=!o.aftale;$('ovAftale').textContent=o.aftale||'';
-    $('ovOnbBox').hidden=!(o.onboarding&&o.onboarding.length);
+    $('ovAftaleBox').hidden=true;$('ovAftale').textContent=o.aftale||'';
+    $('ovOnbBox').hidden=true;
     $('ovOnb').innerHTML=(o.onboarding||[]).map(x=>{
       let knap='';
       if(x.knap&&x.handling&&!x.done){
@@ -1614,7 +1614,7 @@ async function loadOverview(){
     let sum=o.uge.antal?`<b>${o.uge.antal}</b> hændelser denne uge, <b>${o.total.antal}</b> siden start.`:'Ingen hændelser endnu. Når jeres systemer er i drift, står her, hvad assistenten har gjort.';
     $('ugSum').innerHTML=sum;
     $('ovTidslinje').innerHTML=(o.tidslinje||[]).slice(0,12).map(e=>`<div class="ov-item"><b>${esc(o.event_labels[e.type]||e.type)}</b>${e.text?': '+medRing(e.text):''}<br><small>${fmtTs(e.ts)}${e.source?' · '+esc(e.source):''}</small></div>`).join('');
-    $('ovForslagBox').hidden=!(o.forslag&&o.forslag.length);
+    $('ovForslagBox').hidden=true;
     $('ovForslag').innerHTML=(o.forslag||[]).map(f=>`<div class="ov-item" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>${esc(f)}</span><button style="white-space:nowrap;padding:8px 12px;border-radius:8px;border:none;background:var(--cyan);color:#fff;font-weight:600;cursor:pointer" onclick="this.disabled=true;this.textContent='Sendt';acceptForslag(this.dataset.t)" data-t="${esc(f)}">Ja, byg det</button></div>`).join('');
   }catch(e){}
 }
