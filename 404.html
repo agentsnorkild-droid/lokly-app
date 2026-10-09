@@ -603,7 +603,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261009-1539';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261009-1540';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -646,7 +646,7 @@ async function doLogin(){
     const d=await r.json(); if(!r.ok) throw d.error;
     if(d.token){try{localStorage.setItem('lokly_session',d.token);}catch(e){}}
     const me=await fetch('/api/me'); if(!me.ok) throw 'Session fejl';
-    enterApp(await me.json());
+    const meData=await me.json(); enterApp(meData); if(!meData.is_admin) hejAnim((meData.kontakt||'').split(' ')[0]||meData.company);
   }catch(e){$('loginError').textContent=e||'Fejl ved login';}
   btn.disabled=false;
 }
@@ -1829,5 +1829,8 @@ function devVisning(m){localStorage.setItem('lokly_visning',m);const on=m==='mob
 </script>
 <style>body.onepage .bottom-nav{display:none!important}body.onepage .tab-content{padding-bottom:20px}.toplink{background:none;border:0;font:inherit;font-size:13.5px;font-weight:600;color:var(--text2);cursor:pointer;padding:6px 8px;border-radius:8px}.toplink:hover{background:var(--bg);color:var(--text)}.tilbage-ov{background:none;border:0;font:inherit;font-size:14px;font-weight:600;color:var(--cyan);cursor:pointer;padding:10px 4px 0}#topLinks[hidden]{display:none!important}body.onepage #headerActions{display:none!important}</style>
 <style>.sys-card.sys-chat{background:var(--green,#12564b);color:#fff;border-color:transparent}.sys-card.sys-chat h4,.sys-card.sys-chat .sys-url{color:#fff}.sys-card.sys-chat .sys-chip{background:rgba(255,255,255,.18);color:#fff;border-color:transparent}.sys-card.sys-chat .sys-actions span{color:#fff!important}</style>
+<div id="hejOverlay" hidden><div id="hejText"></div></div>
+<style>#hejOverlay{position:fixed;inset:0;z-index:500;background:var(--green,#12564b);display:flex;align-items:center;justify-content:center;animation:hejBg 1.9s ease forwards}#hejOverlay[hidden]{display:none}#hejText{color:#fff;font-size:clamp(34px,8vw,64px);font-weight:800;letter-spacing:-.02em;animation:hejTxt 1.9s cubic-bezier(.2,.8,.2,1) forwards}@keyframes hejTxt{0%{opacity:0;transform:translateY(24px) scale(.96)}18%{opacity:1;transform:translateY(0) scale(1)}75%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-16px) scale(1.02)}}@keyframes hejBg{0%{opacity:1}80%{opacity:1}100%{opacity:0}}</style>
+<script>function hejAnim(n){const o=$('hejOverlay');$('hejText').textContent='Hej '+(n||'');o.hidden=false;o.style.animation='none';void o.offsetWidth;o.style.animation='';setTimeout(()=>{o.hidden=true},1900);}</script>
 </body>
 </html>
