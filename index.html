@@ -603,7 +603,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261009-1540';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261009-1541';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -1829,8 +1829,27 @@ function devVisning(m){localStorage.setItem('lokly_visning',m);const on=m==='mob
 </script>
 <style>body.onepage .bottom-nav{display:none!important}body.onepage .tab-content{padding-bottom:20px}.toplink{background:none;border:0;font:inherit;font-size:13.5px;font-weight:600;color:var(--text2);cursor:pointer;padding:6px 8px;border-radius:8px}.toplink:hover{background:var(--bg);color:var(--text)}.tilbage-ov{background:none;border:0;font:inherit;font-size:14px;font-weight:600;color:var(--cyan);cursor:pointer;padding:10px 4px 0}#topLinks[hidden]{display:none!important}body.onepage #headerActions{display:none!important}</style>
 <style>.sys-card.sys-chat{background:var(--green,#12564b);color:#fff;border-color:transparent}.sys-card.sys-chat h4,.sys-card.sys-chat .sys-url{color:#fff}.sys-card.sys-chat .sys-chip{background:rgba(255,255,255,.18);color:#fff;border-color:transparent}.sys-card.sys-chat .sys-actions span{color:#fff!important}</style>
-<div id="hejOverlay" hidden><div id="hejText"></div></div>
-<style>#hejOverlay{position:fixed;inset:0;z-index:500;background:var(--green,#12564b);display:flex;align-items:center;justify-content:center;animation:hejBg 1.9s ease forwards}#hejOverlay[hidden]{display:none}#hejText{color:#fff;font-size:clamp(34px,8vw,64px);font-weight:800;letter-spacing:-.02em;animation:hejTxt 1.9s cubic-bezier(.2,.8,.2,1) forwards}@keyframes hejTxt{0%{opacity:0;transform:translateY(24px) scale(.96)}18%{opacity:1;transform:translateY(0) scale(1)}75%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-16px) scale(1.02)}}@keyframes hejBg{0%{opacity:1}80%{opacity:1}100%{opacity:0}}</style>
-<script>function hejAnim(n){const o=$('hejOverlay');$('hejText').textContent='Hej '+(n||'');o.hidden=false;o.style.animation='none';void o.offsetWidth;o.style.animation='';setTimeout(()=>{o.hidden=true},1900);}</script>
+<div id="hejOverlay" hidden><div id="hejBlob"><div id="hejText"></div></div><div id="hejParts"></div></div>
+<style>
+#hejOverlay{position:fixed;inset:0;z-index:500;background:rgba(18,86,75,.62);backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2);display:flex;align-items:center;justify-content:center;overflow:hidden;transition:opacity .5s}#hejOverlay[hidden]{display:none}
+#hejBlob{position:relative;width:min(78vw,420px);height:min(78vw,420px);display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.55),rgba(255,255,255,.12) 55%,rgba(255,255,255,.04));border:2px solid rgba(255,255,255,.45);box-shadow:inset 0 0 60px rgba(255,255,255,.25),0 20px 60px rgba(0,0,0,.25);animation:hejMorph 3.2s ease-in-out infinite,hejFloat 3.6s ease-in-out infinite;will-change:border-radius,transform}
+@keyframes hejMorph{0%{border-radius:58% 42% 55% 45%/48% 60% 40% 52%}33%{border-radius:42% 58% 45% 55%/60% 42% 58% 40%}66%{border-radius:55% 45% 60% 40%/45% 55% 42% 58%}100%{border-radius:58% 42% 55% 45%/48% 60% 40% 52%}}
+@keyframes hejFloat{0%{transform:translate(-6%,4%) rotate(-3deg)}50%{transform:translate(6%,-5%) rotate(3deg)}100%{transform:translate(-6%,4%) rotate(-3deg)}}
+#hejText{color:#fff;font-size:clamp(28px,7vw,56px);font-weight:800;letter-spacing:-.02em;text-shadow:0 2px 14px rgba(0,0,0,.25);white-space:nowrap}
+#hejBlob.pop{animation:hejPop .55s cubic-bezier(.3,1.4,.5,1) forwards}
+@keyframes hejPop{0%{transform:scale(1);opacity:1}60%{transform:scale(1.25);opacity:.9}100%{transform:scale(1.9);opacity:0}}
+#hejParts{position:absolute;inset:0;pointer-events:none}#hejParts i{position:absolute;left:50%;top:50%;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.9);animation:hejFly 1.1s cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes hejFly{0%{transform:translate(-50%,-50%) scale(.6);opacity:1}30%{transform:translate(calc(-50% + var(--x)*.6),calc(-50% + var(--y)*.6)) scale(1.1);opacity:1}100%{transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y) + 120px)) scale(.5);opacity:0}}
+</style>
+<script>
+function hejAnim(n){const o=$('hejOverlay'),t=$('hejText'),b=$('hejBlob'),ps=$('hejParts');o.hidden=false;o.style.opacity=1;b.classList.remove('pop');ps.innerHTML='';t.textContent='';
+  const skriv=(s,cb)=>{let i=0;t.textContent='';const iv=setInterval(()=>{t.textContent=s.slice(0,++i);if(i>=s.length){clearInterval(iv);cb&&cb()}},55)};
+  skriv('Velkommen',()=>setTimeout(()=>skriv(n||'',()=>setTimeout(()=>{
+    try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}
+    b.classList.add('pop');
+    for(let k=0;k<42;k++){const e=document.createElement('i');const a=Math.random()*Math.PI*2,r=120+Math.random()*260;e.style.setProperty('--x',Math.cos(a)*r+'px');e.style.setProperty('--y',Math.sin(a)*r+'px');e.style.width=e.style.height=(6+Math.random()*14)+'px';e.style.animationDuration=(.8+Math.random()*.6)+'s';ps.appendChild(e)}
+    setTimeout(()=>{o.style.opacity=0;setTimeout(()=>{o.hidden=true},500)},700)
+  },650)),450));}
+</script>
 </body>
 </html>
