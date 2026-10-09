@@ -1792,31 +1792,33 @@ async function changePassword(){
 }
 </script>
 <div id="sysSheet" class="sys-sheet" hidden onclick="if(event.target===this)closeSystem()"><div class="sys-sheet-in">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><h3 id="ssTitle" style="margin:0;flex:1;font-size:18px"></h3><button onclick="closeSystem()" style="background:none;border:0;font-size:22px;cursor:pointer;color:var(--text2)">✕</button></div>
-  <p id="ssSub" style="margin:0 0 12px;color:var(--text2);font-size:13px"></p>
-  <textarea id="ssText" style="width:100%;min-height:110px;padding:12px;border:1px solid var(--border);border-radius:12px;font:inherit;font-size:15px;background:#fff;color:var(--text)"></textarea>
-  <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap"><button onclick="$('ssFile').click()" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text2);cursor:pointer">Vedhæft billede</button><input type="file" id="ssFile" accept="image/*" multiple style="display:none" onchange="reqFiles(this.files);$('ssFileInfo').textContent=$('reqFileInfo').textContent"><span id="ssFileInfo" style="font-size:12px;color:var(--text2)"></span><span style="flex:1"></span><button id="ssFejl" onclick="sendSystem('fejl')" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer;font:inherit">Meld fejl</button><button id="ssSend" onclick="sendSystem('oenske')" style="padding:10px 16px;border-radius:10px;border:0;background:var(--green,#12564b);color:#fff;cursor:pointer;font:inherit;font-weight:700">Send</button></div>
+  <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;min-width:0"><h3 id="ssTitle" style="margin:0;font-size:20px"></h3><div id="ssUrl" style="font-size:12.5px;color:var(--text2);word-break:break-all"></div></div><span id="ssStatus" class="sys-chip" style="font-size:12px"></span><button onclick="closeSystem()" style="background:none;border:0;font-size:22px;cursor:pointer;color:var(--text2)">✕</button></div>
+  <div id="ssOpts" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:14px 0 4px"><button class="ss-opt" onclick="ssAction('oenske')">Ændr noget</button><button class="ss-opt" onclick="ssAction('fejl')">Meld en fejl</button><a class="ss-opt" id="ssOpen" href="#" target="_blank" rel="noopener">Åbn</a></div>
+  <div id="ssForm" hidden style="margin-top:10px"><textarea id="ssText" style="width:100%;min-height:110px;padding:12px;border:1px solid var(--border);border-radius:12px;font:inherit;font-size:15px;background:#fff;color:var(--text)"></textarea>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap"><button onclick="$('ssFile').click()" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text2);cursor:pointer">Vedhæft billede</button><input type="file" id="ssFile" accept="image/*" multiple style="display:none" onchange="reqFiles(this.files);$('ssFileInfo').textContent=$('reqFileInfo').textContent"><span id="ssFileInfo" style="font-size:12px;color:var(--text2)"></span><span style="flex:1"></span><button id="ssSend" onclick="sendSystem()" style="padding:10px 18px;border-radius:10px;border:0;background:var(--green,#12564b);color:#fff;cursor:pointer;font:inherit;font-weight:700">Send</button></div></div>
   <div id="ssMsg" style="font-size:13px;color:var(--green);min-height:18px;margin-top:4px"></div>
   <div class="req-list" id="ssList" style="margin-top:10px"></div>
 </div></div>
-<style>.sys-sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:60;display:flex;align-items:flex-end;justify-content:center}.sys-sheet[hidden]{display:none}.sys-sheet-in{background:var(--card,#fff);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px}@media(min-width:900px){.sys-sheet{align-items:center}.sys-sheet-in{border-radius:18px}}.sys-card.sys-click{cursor:pointer}.sys-card.sys-click:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}</style>
+<style>.sys-sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:60;display:flex;align-items:flex-end;justify-content:center}.sys-sheet[hidden]{display:none}.sys-sheet-in{background:var(--card,#fff);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 22px}@media(min-width:900px){.sys-sheet{align-items:center}.sys-sheet-in{border-radius:18px}}.sys-card.sys-click{cursor:pointer}.sys-card.sys-click:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}.ss-opt{display:flex;align-items:center;justify-content:center;padding:16px 8px;border:1px solid var(--border);border-radius:12px;background:var(--bg);font:inherit;font-size:14.5px;font-weight:700;color:var(--text);cursor:pointer;text-decoration:none}.ss-opt.on{background:var(--green,#12564b);color:#fff;border-color:transparent}</style>
 <script>
-let SS_SYS=null;
-async function openSystem(i){SS_SYS=(i>=0&&SYSTEMS[i])?SYSTEMS[i].navn:'';reqAttach=[];$('ssFileInfo').textContent='';$('ssMsg').textContent='';$('ssText').value='';
-  $('ssTitle').textContent=SS_SYS||'Nyt system';
-  $('ssSub').textContent='';
-  $('ssText').placeholder=SS_SYS?'Fx: Der skal være et felt til lejlighedsnummer på ordren.':'Fx: En side hvor kunderne selv kan booke en tid.';
-  $('ssFejl').hidden=!SS_SYS;$('ssSend').textContent=SS_SYS?'Send ændring':'Send til Alex';
-  $('sysSheet').hidden=false;setTimeout(()=>$('ssText').focus(),50);loadSystemList();}
+let SS_SYS=null, SS_TYPE='oenske', SS_URL='';
+function openSystem(i){const sys=(i>=0&&SYSTEMS[i])?SYSTEMS[i]:null;SS_SYS=sys?sys.navn:'';SS_URL=sys?sys.url:'';reqAttach=[];$('ssFileInfo').textContent='';$('ssMsg').textContent='';$('ssText').value='';$('ssForm').hidden=true;document.querySelectorAll('.ss-opt').forEach(b=>b.classList.remove('on'));
+  $('ssTitle').textContent=SS_SYS||'Nyt system';let host='';try{host=new URL(SS_URL).host}catch(e){host=SS_URL}$('ssUrl').textContent=host;$('ssOpen').href=SS_URL||'#';$('ssOpen').style.display=SS_URL?'':'none';
+  $('ssOpts').style.gridTemplateColumns=SS_SYS?'1fr 1fr 1fr':'1fr';document.querySelectorAll('.ss-opt')[1].style.display=SS_SYS?'':'none';document.querySelectorAll('.ss-opt')[0].textContent=SS_SYS?'Ændr noget':'Beskriv det nye system';
+  $('ssStatus').textContent=SS_SYS?'Kører':'';$('ssStatus').style.display=SS_SYS?'':'none';
+  $('sysSheet').hidden=false;loadSystemList();if(!SS_SYS)ssAction('oenske');}
+function ssAction(t){SS_TYPE=t;$('ssForm').hidden=false;document.querySelectorAll('.ss-opt').forEach((b,i)=>b.classList.toggle('on',(t==='oenske'&&i===0)||(t==='fejl'&&i===1)));
+  $('ssText').placeholder=t==='fejl'?'Hvad gik galt, og hvornår?':(SS_SYS?'Hvad skal ændres?':'Hvad skal bygges?');$('ssSend').textContent=t==='fejl'?'Meld fejl':(SS_SYS?'Send ændring':'Send til Alex');setTimeout(()=>$('ssText').focus(),50);}
 function closeSystem(){$('sysSheet').hidden=true}
-async function loadSystemList(){try{const r=await fetch('/api/requests');if(!r.ok)return;const items=(await r.json()).filter(x=>SS_SYS?(x.system||'')===SS_SYS:!(x.system||''));
-  $('ssList').innerHTML=items.length?items.map(x=>reqCard(x,false)).join(''):'<div class="req-empty">'+(SS_SYS?'Ingen ændringer endnu.':'Ingen forslag endnu.')+'</div>';}catch(e){}}
-async function sendSystem(type){const text=$('ssText').value.trim();if(!text){$('ssMsg').style.color='var(--red)';$('ssMsg').textContent='Skriv først hvad det drejer sig om.';return}
-  $('ssSend').disabled=true;$('ssFejl').disabled=true;
-  try{const files=reqAttach.length?await filesToBase64(reqAttach):[];const r=await fetch('/api/requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,text,files,system:SS_SYS})});const d=await r.json();if(!r.ok)throw d.error;
-    $('ssText').value='';reqAttach=[];$('ssFileInfo').textContent='';$('ssMsg').style.color='var(--green)';$('ssMsg').textContent=SS_SYS?(type==='fejl'?'Fejlen er meldt og rettes nu.':'Modtaget. Ændringen bygges nu, du får besked når den er klar.'):'Sendt til Alex. Du hører fra ham.';
+async function loadSystemList(){try{const r=await fetch('/api/requests');if(!r.ok)return;const items=(await r.json()).filter(x=>SS_SYS?(x.system||'')===SS_SYS:!(x.system||''));const n=items.filter(x=>x.status==='modtaget'||x.status==='i_gang').length;
+  if(SS_SYS){$('ssStatus').textContent=n?n+' i gang':'Kører';$('ssStatus').className='sys-chip'+(n?' open':'');}
+  $('ssList').innerHTML=items.length?items.map(x=>reqCard(x,false)).join(''):'';}catch(e){}}
+async function sendSystem(){const text=$('ssText').value.trim();if(!text){$('ssMsg').style.color='var(--red)';$('ssMsg').textContent='Skriv først.';return}
+  $('ssSend').disabled=true;
+  try{const files=reqAttach.length?await filesToBase64(reqAttach):[];const r=await fetch('/api/requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:SS_TYPE,text,files,system:SS_SYS})});const d=await r.json();if(!r.ok)throw d.error;
+    $('ssText').value='';reqAttach=[];$('ssFileInfo').textContent='';$('ssForm').hidden=true;document.querySelectorAll('.ss-opt').forEach(b=>b.classList.remove('on'));$('ssMsg').style.color='var(--green)';$('ssMsg').textContent=SS_SYS?(SS_TYPE==='fejl'?'Fejlen er meldt og rettes nu.':'Modtaget, bygges nu.'):'Sendt til Alex.';
     loadSystemList();loadOverview();}catch(e){$('ssMsg').style.color='var(--red)';$('ssMsg').textContent=e||'Kunne ikke sende. Prøv igen.'}
-  $('ssSend').disabled=false;$('ssFejl').disabled=false;}
+  $('ssSend').disabled=false;}
 </script>
 
 <script>
