@@ -396,8 +396,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
         <div class="stat-card"><div class="stat-num" id="ovMsgs">—</div><div class="stat-label">Beskeder</div></div>
       </div>
       <div class="req-form" id="ovLinksBox"><h3>Dine systemer</h3><div class="sys-grid" id="ovLinks"></div></div>
-      <div class="req-form" id="ovOnbBox" hidden><h3>Sådan kommer I i gang</h3><div class="req-list" id="ovOnb"></div></div>
-      <div class="req-form" id="ovUgeBox">
+      <div class="req-form" id="ovOnbBox" hidden><h3>Tjekliste</h3><div class="req-list" id="ovOnb"></div></div>
+      <div class="req-form" id="ovUgeBox" hidden style="display:none">
         <h3>Det er sket i jeres systemer de sidste 7 dage</h3>
         <div class="stats-row" id="ugStats" style="margin-top:6px"></div>
         <p id="ugSum" style="margin-top:8px"></p>
@@ -602,7 +602,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261009-1532';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261009-1533';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
