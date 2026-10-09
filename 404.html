@@ -464,10 +464,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
   </div>
 
   <nav class="bottom-nav">
-    <button class="active" id="navChat" onclick="switchTab('Chat',this)"><span class="nav-icon">💬</span>Chat</button>
+    <button id="navDashboard" hidden onclick="switchTab('Dashboard',this)"><span class="nav-icon">📊</span>Overblik</button>
     <button id="navAdmin" hidden onclick="switchTab('Admin',this)"><span class="nav-icon">📊</span>Dashboard</button>
     <button id="navRequests" hidden onclick="switchTab('Requests',this)"><span class="nav-icon">✉️</span>Ønsker<span class="nav-badge" id="reqBadge" hidden>0</span></button>
-    <button id="navDashboard" hidden onclick="switchTab('Dashboard',this)"><span class="nav-icon">📊</span>Overblik</button>
+    <button class="active" id="navChat" onclick="switchTab('Chat',this)"><span class="nav-icon">💬</span>Chat</button>
     <button id="navDocs" hidden onclick="switchTab('Docs',this)"><span class="nav-icon">📄</span>Dokumenter</button>
     <button id="navSettings" onclick="switchTab('Settings',this)"><span class="nav-icon">⚙️</span>Indstillinger</button>
   </nav>
@@ -602,7 +602,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261009-1533';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261009-1534';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -670,6 +670,7 @@ async function enterApp(data){
     // Customer — show Chat + Overblik + Indstillinger
     if((data.company||'')==='Testfirma ApS'&&!window.frameElement){$('devbar').hidden=false;if(localStorage.getItem('lokly_visning')==='mobil')devVisning('mobil');}
     $('navAdmin').hidden=true; $('navDashboard').hidden=false; $('navRequests').hidden=true; $('navDocs').hidden=false; updateReqBadge(data.open_requests||0); loadRequests();
+    switchTab('Dashboard',$('navDashboard'));  // Overblik er forsiden for kunder (Alex 9/10-2026)
     $('settingsReadOnly').style.display='none'; $('settingsEditable').style.display='';
     $('setCompanyRO').textContent=data.company;
     $('editEmail').value=data.email||''; $('editPhone').value=data.phone||'';
