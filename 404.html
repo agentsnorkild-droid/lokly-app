@@ -603,7 +603,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261009-1545';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261009-1556';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -624,7 +624,7 @@ const $ = id => document.getElementById(id);
 let chatHistory = [], userData = {}, editingUsername = null;
 const tabMap = {Chat:'tabChat',Admin:'tabAdmin',Dashboard:'tabDashboard',Settings:'tabSettings',Requests:'tabRequests',Docs:'tabDocs'};
 
-function switchTab(name, btn){
+function switchTab(name, btn){document.body.classList.toggle('chat-open',name==='Chat');
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
   $(tabMap[name]).classList.add('active'); btn.classList.add('active');
@@ -671,7 +671,7 @@ async function enterApp(data){
     // Customer — show Chat + Overblik + Indstillinger
     if((data.company||'')==='Testfirma ApS'&&!window.frameElement){$('devbar').hidden=false;if(localStorage.getItem('lokly_visning')==='mobil')devVisning('mobil');}
     $('navAdmin').hidden=true; $('navDashboard').hidden=false; $('navRequests').hidden=true; $('navDocs').hidden=false; updateReqBadge(data.open_requests||0); loadRequests();
-    document.body.classList.add('onepage'); $('topLinks').hidden=false; document.querySelectorAll('.tilbage-ov').forEach(b=>b.hidden=false);
+    document.body.classList.add('onepage'); $('topLinks').hidden=false; $('chatBubble').hidden=false; document.querySelectorAll('.tilbage-ov').forEach(b=>b.hidden=false);
     switchTab('Dashboard',$('navDashboard'));  // Overblik er forsiden for kunder; alt andet nås fra toppen (onepage, Alex 9/10-2026)
     $('settingsReadOnly').style.display='none'; $('settingsEditable').style.display='';
     $('setCompanyRO').textContent=data.company;
@@ -1587,11 +1587,11 @@ async function startRequest(system,kind){switchTab('Requests',$('navRequests'));
 // ── Overblik ──────────────────────────────────────────────────────────────────
 async function loadOverview(){
   try{const r=await fetch('/api/overview');if(!r.ok)return;const o=await r.json();
-    $('ovOpen').textContent=o.open.length;$('ovDone').textContent=o.done.length+o.leverancer.length;$('ovMsgs').textContent=o.messages;
+    $('ovOpen').textContent=o.open.length;$('ovDone').textContent=o.done.length+o.leverancer.length;$('ovMsgs').textContent=o.messages;if($('cbBadge')){$('cbBadge').textContent=o.messages||0;$('cbBadge').hidden=!o.messages;}
     if(false){$('ovKonsulent').hidden=false;$('ovMoede').hidden=false;$('ovMoede').innerHTML=esc(o.naeste_moede);}else{$('ovKonsulent').hidden=true;$('ovMoede').hidden=true;}
     SYSTEMS=o.links.map(l=>({navn:l.navn||l.url,url:l.url}));fillReqSystem();
     const openBy=n=>o.open.filter(r=>(r.system||'')===n).length, doneBy=n=>o.done.filter(r=>(r.system||'')===n).length;
-    $('ovLinks').innerHTML=`<div class="sys-card sys-click sys-chat" onclick="switchTab('Chat',$('navChat'))"><div class="sys-ic">💬</div><h4>Chat</h4><div class="sys-url">Din assistent</div><span class="sys-chip">${o.messages?o.messages+' beskeder':'Klar'}</span><div class="sys-actions"><span style="font-size:14px;font-weight:600;color:var(--cyan);align-self:center;margin-left:auto">Åbn chatten ›</span></div></div>`+SYSTEMS.map((l,i)=>{const n=openBy(l.navn),d=doneBy(l.navn);let host='';try{host=new URL(l.url).host}catch(e){host=l.url}
+    $('ovLinks').innerHTML=SYSTEMS.map((l,i)=>{const n=openBy(l.navn),d=doneBy(l.navn);let host='';try{host=new URL(l.url).host}catch(e){host=l.url}
       return `<div class="sys-card sys-click" onclick="openSystem(${i})"><div class="sys-ic">${/mail/i.test(l.navn)?'✉️':/plan|ordre/i.test(l.navn)?'🗓️':/hjemmeside|web|site/i.test(l.navn)?'🌐':'🧩'}</div><h4>${esc(l.navn)}</h4><div class="sys-url">${esc(host)}</div><span class="sys-chip ${n?'open':''}">${n?n+' ændring'+(n>1?'er':'')+' i gang':(d?d+' ændring'+(d>1?'er':'')+' leveret':'Kører')}</span><div class="sys-actions"><a href="${esc(l.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Åbn</a><span style="font-size:14px;font-weight:600;color:rgba(255,255,255,.9);align-self:center;margin-left:auto">Skriv en ændring ›</span></div></div>`;}).join('')
       +`<div class="sys-card sys-new" onclick="openSystem(-1)"><div><b>+ Nyt system</b></div></div>`;
     const lev=[...o.done.map(d=>`<div class="ov-item">${esc(d.svar||d.text)}<br><small>Ønske #${d.id} · færdigt ${fmtTs(d.updated)}</small></div>`),...o.leverancer.map(l=>`<div class="ov-item">${esc(l)}</div>`)];
@@ -1791,6 +1791,18 @@ async function changePassword(){
   if(r.ok){$('pwOld').value='';$('pwNew').value='';}
 }
 </script>
+<button id="chatBubble" hidden onclick="switchTab('Chat',$('navChat'))" aria-label="Chat"><span class="cb-core"></span><span class="cb-txt">💬</span><span class="cb-badge" id="cbBadge" hidden>0</span></button>
+<style>
+#chatBubble{position:fixed;right:18px;bottom:max(22px,env(safe-area-inset-bottom));width:84px;height:84px;border:0;padding:0;background:none;cursor:pointer;z-index:70;animation:cbFloat 5s ease-in-out infinite;touch-action:manipulation}#chatBubble[hidden]{display:none}
+#chatBubble .cb-core{position:absolute;inset:0;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.55),rgba(31,122,92,.95) 45%,rgba(18,86,75,1) 100%);box-shadow:0 14px 34px rgba(14,69,61,.35),inset 0 0 22px rgba(255,255,255,.25);animation:cbMorph 3s ease-in-out infinite;will-change:border-radius}
+#chatBubble .cb-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+#chatBubble .cb-badge{position:absolute;top:2px;right:2px;background:#fff;color:#12564b;font-size:11px;font-weight:800;border-radius:999px;min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 6px rgba(0,0,0,.2)}#chatBubble .cb-badge[hidden]{display:none}
+#chatBubble:active .cb-core{animation:cbSquish .5s cubic-bezier(.3,1.5,.5,1)}
+@keyframes cbMorph{0%{border-radius:58% 42% 55% 45%/48% 60% 40% 52%}33%{border-radius:42% 58% 45% 55%/60% 42% 58% 40%}66%{border-radius:55% 45% 60% 40%/45% 55% 42% 58%}100%{border-radius:58% 42% 55% 45%/48% 60% 40% 52%}}
+@keyframes cbFloat{0%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}100%{transform:translateY(0) rotate(-2deg)}}
+@keyframes cbSquish{0%{transform:scale(1)}40%{transform:scale(.82,1.14)}70%{transform:scale(1.12,.9)}100%{transform:scale(1)}}
+body.onepage.chat-open #chatBubble{display:none}
+</style>
 <div id="sysSheet" class="sys-sheet" hidden onclick="if(event.target===this)closeSystem()"><div class="sys-sheet-in">
   <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;min-width:0"><h3 id="ssTitle" style="margin:0;font-size:20px"></h3><div id="ssUrl" style="font-size:12.5px;color:var(--text2);word-break:break-all"></div></div><span id="ssStatus" class="sys-chip" style="font-size:12px"></span><button onclick="closeSystem()" style="background:none;border:0;font-size:22px;cursor:pointer;color:var(--text2)">✕</button></div>
   <div id="ssOpts" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:14px 0 4px"><button class="ss-opt" onclick="ssAction('oenske')">Ændr noget</button><button class="ss-opt" onclick="ssAction('fejl')">Meld en fejl</button><a class="ss-opt" id="ssOpen" href="#" target="_blank" rel="noopener">Åbn</a></div>
