@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b2522">
 <title>Lokly · intro</title>
+<!-- intro v2 (10/10-2026, 2,5 s): én boble stiger skråt fra nederste venstre hjørne, snurrer, slår over i et
+     splash af samme goo-mesh og sætter sig som "Hej". Alt i transform/opacity. -->
 <style>
-/* Farver taget fra portalens palet (--cyan #12564b, --green #1f7a5c) men på mørk baggrund,
-   så vand-blobbene kan lyse. Ingen eksterne biblioteker, ingen webfonts. */
+/* Farver fra portalens palet (--cyan #12564b, --green #1f7a5c) på mørk bund,
+   så vandet kan lyse. Ingen eksterne biblioteker, ingen webfonts. */
 :root{
-  --cyan:#12564b;          /* portalens primærfarve */
+  --cyan:#12564b;
   --green:#1f7a5c;
-  --vand:#2fb897;          /* blob-farve, lysere variant så den ses på mørk bund */
+  --vand:#2fb897;
   --vand-lys:#6ff0d2;
   --bund:#0b2522;
   --tekst:#eafaf5;
@@ -28,32 +30,38 @@ html,body{height:100%;overflow:hidden;background:var(--bund);
 .korn{position:absolute;inset:0;opacity:.06;pointer-events:none;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='.6'/></svg>")}
 
-/* ---- goo-laget: blobs OG "Hej"-teksten ligger inde i samme filter,
-       så bogstaverne smelter sammen med vanddråberne (metaball-look) ---- */
+/* ---- goo-laget: boble, splash-dråber OG "Hej"-teksten ligger i samme filter,
+       så alt smelter sammen som væske (metaball/goo, teknik fra demo2) ---- */
 #goo{position:absolute;inset:0;filter:url(#gooey);pointer-events:none;will-change:filter}
 .blob{position:absolute;top:0;left:0;border-radius:50%;
   background:radial-gradient(38% 38% at 34% 30%,var(--vand-lys) 0%,var(--vand) 55%,var(--green) 100%);
   will-change:transform,opacity;backface-visibility:hidden}
 
-/* "Hej" – ligger i goo-laget og bliver dermed en del af væsken */
-#hej{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+/* "Hej" – inde i goo-laget, så bogstaverne er en del af væsken */
+#hej{position:absolute;left:50%;top:50%;
   font-size:clamp(72px,22vw,190px);font-weight:800;letter-spacing:-.04em;line-height:1;
-  color:var(--vand);opacity:0;white-space:nowrap;will-change:opacity,transform}
+  color:var(--vand);opacity:0;white-space:nowrap;will-change:opacity,transform;
+  transform:translate(-50%,-50%)}
 
-/* ---- Scene 2: kinetisk typografi, uden for goo-filteret så navnet står knivskarpt ---- */
+/* ---- Scene 2: kinetisk typografi uden for goo-filteret, så navnet står skarpt ---- */
 #navnlag{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;pointer-events:none;opacity:0;transition:opacity .35s ease}
+  justify-content:center;pointer-events:none;opacity:0;transition:opacity .18s ease}
 #navnlag.vis{opacity:1}
-.linje{display:flex;overflow:hidden;line-height:1.22;height:1.22em;justify-content:center;max-width:94vw}
+.linje{display:flex;overflow:hidden;line-height:1.24;height:1.24em;justify-content:center;max-width:94vw}
 #hilsen{font-size:clamp(11px,3.1vw,15px);letter-spacing:.34em;text-transform:uppercase;
   font-weight:600;color:var(--vand-lys);opacity:.85;margin-bottom:4px}
 #navn{font-size:clamp(34px,10.5vw,86px);font-weight:800;letter-spacing:-.035em}
-.linje span{display:inline-block;transform:translateY(118%) rotate(7deg);opacity:0;white-space:pre}
-#navnlag.kor .linje span{animation:ind .75s cubic-bezier(.17,1.2,.3,1) forwards}
-@keyframes ind{to{transform:translateY(0) rotate(0);opacity:1}}
+.linje span{display:inline-block;white-space:pre;
+  transform:translate3d(10px,120%,0) rotate(9deg) scale(.86);opacity:0}
+/* blødt svingende indgang med overshoot */
+#navnlag.kor .linje span{animation:svingInd .40s cubic-bezier(.16,1.45,.3,1) forwards}
+@keyframes svingInd{
+  60%{transform:translate3d(-2px,-7%,0) rotate(-1.5deg) scale(1.02);opacity:1}
+  to{transform:translate3d(0,0,0) rotate(0) scale(1);opacity:1}
+}
 .streg{height:2px;width:0;margin-top:16px;border-radius:2px;
   background:linear-gradient(90deg,transparent,var(--vand-lys),transparent)}
-#navnlag.kor .streg{animation:stregind .8s cubic-bezier(.2,.9,.2,1) .55s forwards}
+#navnlag.kor .streg{animation:stregind .34s cubic-bezier(.2,.9,.2,1) .22s forwards}
 @keyframes stregind{to{width:min(58vw,360px)}}
 
 /* ---- Scene 3: chat-boblen (56 px, ingen emoji) ---- */
@@ -63,7 +71,7 @@ html,body{height:100%;overflow:hidden;background:var(--bund);
   box-shadow:0 10px 26px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.22);
   border:1px solid rgba(111,240,210,.35);
   transform:scale(0);opacity:0;will-change:transform,opacity}
-#boble.ind{animation:bobleind .5s cubic-bezier(.18,1.5,.4,1) forwards}
+#boble.ind{animation:bobleind .34s cubic-bezier(.18,1.6,.4,1) forwards}
 @keyframes bobleind{to{transform:scale(1);opacity:1}}
 
 #fortsaet{position:absolute;left:0;right:0;bottom:calc(26px + env(safe-area-inset-bottom));
@@ -71,19 +79,17 @@ html,body{height:100%;overflow:hidden;background:var(--bund);
   transition:opacity .4s ease;pointer-events:none}
 #fortsaet.vis{opacity:.75}
 #spring{position:absolute;top:calc(14px + env(safe-area-inset-top));right:16px;font-size:12px;
-  letter-spacing:.08em;color:#9fd8c8;opacity:.0;transition:opacity .5s ease .9s}
+  letter-spacing:.08em;color:#9fd8c8;opacity:0;transition:opacity .5s ease .9s}
 #spring.vis{opacity:.5}
 
-@media (prefers-reduced-motion:reduce){
-  #goo{filter:none}
-}
+@media (prefers-reduced-motion:reduce){ #goo{filter:none} }
 </style>
 </head>
 <body>
 <div id="scene">
   <div class="korn"></div>
 
-  <!-- goo-laget: alle blobs indsættes af JS -->
+  <!-- goo-laget: boble, kredsende indre blobs og splash-dråber indsættes af JS -->
   <div id="goo"><div id="hej">Hej</div></div>
 
   <div id="navnlag">
@@ -97,8 +103,7 @@ html,body{height:100%;overflow:hidden;background:var(--bund);
   <div id="spring">tryk = spring over</div>
 </div>
 
-<!-- Metaball-filteret: kraftig blur + hård alfa-kurve = væske der smelter sammen.
-     Samme teknik som mail/static/demo2.html. -->
+<!-- Metaball-filteret: kraftig blur + hård alfa-kurve = væske der smelter sammen -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <filter id="gooey">
     <feGaussianBlur in="SourceGraphic" stdDeviation="13" result="b"/>
@@ -116,217 +121,302 @@ html,body{height:100%;overflow:hidden;background:var(--bund);
 var q = new URLSearchParams(location.search);
 var navnTekst = (q.get('n') || 'Lokly').trim().slice(0,40) || 'Lokly';
 var hilsenTekst = q.get('h') || 'Velkommen til';
-// ?once=1: vis kun intro første gang pr. enhed (localStorage). Standalone-siden
-// spiller altid, så Alex kan se den igen uden at rydde browseren.
+// ?once=1: vis kun intro første gang pr. enhed. Standalone-siden spiller altid,
+// så Alex kan se den igen uden at rydde browseren.
 var kunFoersteGang = q.get('once') === '1';
 var NOEGLE = 'lokly_intro_set_v1';
 
 var scene = document.getElementById('scene');
 var gooLag = document.getElementById('goo');
-var elHej  = document.getElementById('hej');
+var elHej = document.getElementById('hej');
 var elNavnLag = document.getElementById('navnlag');
 var elBoble = document.getElementById('boble');
 var elFortsaet = document.getElementById('fortsaet');
 var elSpring = document.getElementById('spring');
 var iIframe = (function(){ try { return window.self !== window.top; } catch(e){ return true; } })();
 
-/* ---------------- tidslinje (ms) ---------------- */
+/* ---------------- tidslinje (ms) — i alt 2,5 s, stramt og saftigt ----------------
+   boble skråt op + snurren 1,0 s | splash + "Hej" 0,7 s | navn 0,5 s | hjørne 0,3 s */
 var T = {
-  indStart: 120,     // blobs glider ind fra siderne
-  samlet:   1250,    // blobs står i "Hej"-formationen
-  hejFuld:  1700,    // teksten er helt smeltet sammen med blobbene
-  hold:     2450,    // hold på "Hej"
-  oploes:   3050,    // "Hej" opløses til blobs igen
-  navnInd:  2950,    // kinetisk typografi starter
-  navnUd:   4600,    // navnet forsvinder
-  hjoerne:  4650,    // væsken flyder mod nederste højre hjørne
-  samling:  5500,    // én rund boble
-  slut:     5850
+  stigStart:  40,   // boblen letter fra nederste venstre hjørne
+  slag:      1000,  // den slår over på midten: splash
+  hejInd:    1090,  // "Hej" smelter ind i væsken
+  saet:      1400,  // bogstaverne har gynget sig på plads
+  hold:      1600,  // kort hold
+  oploes:    1700,  // Hej opløses igen
+  navnInd:   1680,  // navnet svinger ind
+  navnUd:    2190,
+  hjoerne:   2200,  // væsken flyder mod nederste højre hjørne
+  samling:   2440,  // samles til én rund boble
+  slut:      2520
 };
 
 /* ---------------- bogstav-punkter via canvas-sampling ----------------
-   Vi tegner "Hej" i et offscreen canvas, læser pixels og vælger et spredt
-   udvalg af punkter inde i bogstaverne (farthest-point sampling). Blobbene
-   får de punkter som mål, så de samles i bogstavformen bag teksten. */
+   "Hej" tegnes i et offscreen canvas; pixels læses og et jævnt spredt udvalg
+   (farthest-point sampling) bliver mål for blobbene, så de sætter sig i
+   bogstavformen bag selve teksten. */
+var ANTAL_BOGSTAVPKT = 12;
 function hejPunkter(antal){
   var CW = 900, CH = 320;
   var c = document.createElement('canvas');
   c.width = CW; c.height = CH;
   var k = c.getContext('2d');
   if(!k) return null;
-  k.fillStyle = '#fff';
-  k.textAlign = 'center';
-  k.textBaseline = 'middle';
+  k.fillStyle = '#fff'; k.textAlign = 'center'; k.textBaseline = 'middle';
   k.font = '800 230px -apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif';
   k.fillText('Hej', CW/2, CH/2);
-  var data;
-  try { data = k.getImageData(0,0,CW,CH).data; } catch(e){ return null; }
+  var d;
+  try { d = k.getImageData(0,0,CW,CH).data; } catch(e){ return null; }
 
-  var kandidater = [];
-  for(var y=4; y<CH; y+=9){
-    for(var x=4; x<CW; x+=9){
-      if(data[(y*CW+x)*4+3] > 150) kandidater.push([x,y]);
-    }
-  }
-  if(kandidater.length < antal) return null;
+  var kand = [];
+  for(var y=4; y<CH; y+=9) for(var x=4; x<CW; x+=9)
+    if(d[(y*CW+x)*4+3] > 150) kand.push([x,y]);
+  if(kand.length < antal) return null;
 
-  // farthest-point sampling: spreder punkterne jævnt ud over bogstaverne
-  var valgt = [kandidater[(kandidater.length/2)|0]];
-  var afstand = kandidater.map(function(p){ return afst2(p, valgt[0]); });
+  var valgt = [kand[(kand.length/2)|0]];
+  var afst = kand.map(function(p){ return kvad(p, valgt[0]); });
   while(valgt.length < antal){
-    var bedst = 0;
-    for(var i=1;i<kandidater.length;i++) if(afstand[i] > afstand[bedst]) bedst = i;
-    valgt.push(kandidater[bedst]);
-    for(var j=0;j<kandidater.length;j++){
-      var d = afst2(kandidater[j], kandidater[bedst]);
-      if(d < afstand[j]) afstand[j] = d;
+    var b = 0;
+    for(var i=1;i<kand.length;i++) if(afst[i] > afst[b]) b = i;
+    valgt.push(kand[b]);
+    for(var j=0;j<kand.length;j++){
+      var v = kvad(kand[j], kand[b]);
+      if(v < afst[j]) afst[j] = v;
     }
   }
-  // bogstavernes faktiske boks i canvas-pixels, så punkterne kan normaliseres
-  var minX=CW, maxX=0, minY=CH, maxY=0;
-  for(var n=0;n<kandidater.length;n++){
-    var kx=kandidater[n][0], ky=kandidater[n][1];
-    if(kx<minX) minX=kx; if(kx>maxX) maxX=kx;
-    if(ky<minY) minY=ky; if(ky>maxY) maxY=ky;
+  // normaliser til bogstavernes egen boks
+  var minX=CW,maxX=0,minY=CH,maxY=0;
+  for(var n=0;n<kand.length;n++){
+    var kx=kand[n][0], ky=kand[n][1];
+    if(kx<minX)minX=kx; if(kx>maxX)maxX=kx; if(ky<minY)minY=ky; if(ky>maxY)maxY=ky;
   }
-  var bw = Math.max(1, maxX-minX), bh = Math.max(1, maxY-minY);
-  return { punkter: valgt.map(function(p){ return [(p[0]-minX)/bw, (p[1]-minY)/bh]; }) };
+  var bw=Math.max(1,maxX-minX), bh=Math.max(1,maxY-minY);
+  return valgt.map(function(p){ return [(p[0]-minX)/bw, (p[1]-minY)/bh]; });
 }
-function afst2(a,b){ var dx=a[0]-b[0], dy=a[1]-b[1]; return dx*dx+dy*dy; }
+function kvad(a,b){ var dx=a[0]-b[0], dy=a[1]-b[1]; return dx*dx+dy*dy; }
+
+/* ---------------- easing ---------------- */
+function klem(v){ return v<0?0:v>1?1:v; }
+function udCubic(t){ return 1-Math.pow(1-t,3); }
+function indUdCubic(t){ return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+// fjeder: 0->1 med aftagende svingninger (elastisk, ikke-lineær)
+function fjeder(t, svingninger, demp){
+  if(t<=0) return 0; if(t>=1) return 1;
+  return 1 - Math.exp(-demp*t) * Math.cos(svingninger*Math.PI*t);
+}
+// blødt overshoot
+function udBack(t, c){ c = c||1.35; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); }
 
 /* ---------------- blobs ---------------- */
-var ANTAL = 12;                 // 8-14 jf. spec; 12 dækker "Hej" uden at koste fps
-var blobs = [];
-var W = 0, H = 0, skala = 1, hejBoks = null;
+var ANTAL_KREDS = 6;       // indre blobs der kredser = boblen "snurrer"
+var ANTAL_SPLASH = 14;     // dråber i splashet
+var kerne = null, kreds = [], splash = [], alle = [];
+var W=0, H=0, cx=0, cy=0, rKerne=60, hejBoks=null, bogstavPkt=null;
+var maalBoble = {x:0,y:0};
 
 function byg(){
-  var proeve = hejPunkter(ANTAL);
-  for(var i=0;i<ANTAL;i++){
+  bogstavPkt = hejPunkter(ANTAL_BOGSTAVPKT) || [];
+
+  function nyBlob(rolle){
     var el = document.createElement('div');
     el.className = 'blob';
     gooLag.appendChild(el);
-    blobs.push({
-      el: el,
-      // startside: skiftevis venstre/højre
-      side: (i % 2 === 0) ? -1 : 1,
-      // relativ placering i bogstavformen (0-1 inden for bogstavernes egen boks)
-      px: proeve ? proeve.punkter[i][0] : (0.1 + 0.8*Math.random()),
-      py: proeve ? proeve.punkter[i][1] : (0.2 + 0.6*Math.random()),
-      r: 0,
-      faseA: Math.random()*Math.PI*2,
-      faseB: Math.random()*Math.PI*2,
-      forsink: (i/ANTAL) * 260,          // stagger på indgangen
-      spredX: (Math.random()*2-1),
-      spredY: (Math.random()*2-1)
-    });
+    var b = { el: el, rolle: rolle, faseA: Math.random()*6.283, faseB: Math.random()*6.283 };
+    alle.push(b);
+    return b;
   }
+
+  kerne = nyBlob('kerne');
+  for(var i=0;i<ANTAL_KREDS;i++){
+    var k = nyBlob('kreds');
+    k.vinkel = (i/ANTAL_KREDS) * 6.283;
+    k.radFaktor = 0.42 + 0.22*((i*7%5)/5);
+    kreds.push(k);
+  }
+  for(var j=0;j<ANTAL_SPLASH;j++){
+    var s = nyBlob('splash');
+    // bue ud til siderne og opad, med tyngde bagefter
+    var side = (j%2===0) ? -1 : 1;
+    var sp = (j/ANTAL_SPLASH);
+    s.vx = side * (160 + 420*Math.random());
+    s.vy = -(320 + 420*Math.random());
+    s.g = 2300 + 900*Math.random();
+    s.lille = 0.16 + 0.26*Math.random();
+    s.forsink = sp*55;
+    splash.push(s);
+  }
+
+  // hvem former bogstaverne: kernen + alle kredsende + de første splash-dråber
+  var pkt = 0;
+  kerne.pktIdx = pkt++;
+  for(var a=0;a<kreds.length && pkt<bogstavPkt.length;a++) kreds[a].pktIdx = pkt++;
+  for(var b2=0;b2<splash.length && pkt<bogstavPkt.length;b2++) splash[b2].pktIdx = pkt++;
+
   maal();
 }
 
 function maal(){
   W = window.innerWidth; H = window.innerHeight;
-  // "Hej"-boksen følger clamp(72px,22vw,190px) i CSS -> brug den målte tekst
-  var b = elHej.getBoundingClientRect();
-  hejBoks = { x: b.left, y: b.top, w: b.width || W*0.5, h: b.height || H*0.25 };
-  // blob-radius skalerer med teksthøjden, så de netop overlapper og smelter
-  var r = Math.max(26, Math.min(62, hejBoks.h * 0.30));
-  for(var i=0;i<blobs.length;i++){
-    var bl = blobs[i];
-    bl.r = r * (0.86 + 0.28 * ((i*37 % 11) / 11));  // lidt variation, deterministisk
-    bl.el.style.width = (bl.r*2) + 'px';
-    bl.el.style.height = (bl.r*2) + 'px';
-    // bogstavernes synlige flade ligger lidt inde i elementets layout-boks
-    bl.hx = hejBoks.x + bl.px * hejBoks.w;
-    bl.hy = hejBoks.y + hejBoks.h * 0.08 + bl.py * hejBoks.h * 0.84;
-    bl.sx = bl.side < 0 ? -bl.r*2.4 : W + bl.r*2.4;   // uden for skærmen
-    bl.sy = H*0.25 + Math.random()*H*0.5;
-    bl.ox = bl.hx + bl.spredX * W * 0.42;             // opløsningsmål
-    bl.oy = bl.hy + bl.spredY * H * 0.34;
-  }
-  boble = { x: W - 20 - 28, y: H - 20 - 28 };
-}
-var boble = { x: 0, y: 0 };
+  var r = elHej.getBoundingClientRect();
+  hejBoks = { x:r.left, y:r.top, w:r.width||W*0.5, h:r.height||H*0.25 };
+  cx = hejBoks.x + hejBoks.w/2;
+  cy = hejBoks.y + hejBoks.h/2;
+  rKerne = Math.max(46, Math.min(104, Math.min(W,H)*0.13));
 
-/* ---------------- easing ---------------- */
-function klem(v){ return v < 0 ? 0 : v > 1 ? 1 : v; }
-function udCubic(t){ return 1 - Math.pow(1-t, 3); }
-function indUdCubic(t){ return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+  for(var i=0;i<alle.length;i++){
+    var b = alle[i];
+    if(b.rolle === 'kerne') b.r = rKerne;
+    else if(b.rolle === 'kreds') b.r = rKerne*0.46;
+    else b.r = Math.max(9, rKerne*b.lille);
+    b.el.style.width = (b.r*2)+'px';
+    b.el.style.height = (b.r*2)+'px';
+    if(b.pktIdx != null && bogstavPkt[b.pktIdx]){
+      var p = bogstavPkt[b.pktIdx];
+      b.hx = hejBoks.x + p[0]*hejBoks.w;
+      b.hy = hejBoks.y + hejBoks.h*0.08 + p[1]*hejBoks.h*0.84;
+      // hver blob får sin egen lille gyngeretning ind mod bogstavet
+      b.gyngeX = (Math.random()*2-1)*26;
+      b.gyngeY = (Math.random()*2-1)*22;
+      b.oX = b.hx + (Math.random()*2-1)*W*0.42;   // opløsningsmål
+      b.oY = b.hy + (Math.random()*2-1)*H*0.32;
+    }
+  }
+  maalBoble = { x: W-20-28, y: H-20-28 };
+}
 
 /* ---------------- animationsløkke ---------------- */
-var start = 0, koerer = true, faerdigMeldt = false, navnStartet = false, bobleVist = false;
+var start=0, koerer=true, faerdigMeldt=false, navnStartet=false, bobleVist=false;
+
+function saet(b,x,y,sx,sy,o){
+  b.el.style.opacity = o;
+  b.el.style.transform = 'translate3d('+(x-b.r)+'px,'+(y-b.r)+'px,0) scale('+sx+','+sy+')';
+}
 
 function ramme(nu){
-  if(!koerer) return;            // en ventende ramme må ikke overskrive slut-tilstanden
+  if(!koerer) return;                 // en ventende ramme må ikke overskrive slutten
   if(!start) start = nu;
   var t = nu - start;
 
-  for(var i=0;i<blobs.length;i++){
-    var b = blobs[i];
-    var x, y, s = 1, o = 1;
+  /* --- boblens bane på vej op: elastisk, vuggende --- */
+  var pStig = klem((t - T.stigStart) / (T.slag - T.stigStart));
+  // blød, ikke-lineær stigning med elastisk krusning (ingen for tidlig ankomst)
+  var eStig = udCubic(pStig) + 0.05*Math.exp(-3.4*pStig)*Math.sin(pStig*11);
+  // diagonal bane: nederste VENSTRE hjørne -> midten af skærmen
+  var startX = W*0.10 - rKerne*0.8;
+  var startY = H + rKerne*1.6;
+  var sving = Math.sin(t/150)*16*(1-pStig) + Math.sin(t/330)*9*(1-pStig*0.6);
+  var kerneX = startX + (cx - startX)*eStig + sving;
+  var kerneY = startY + (cy - startY)*eStig - Math.cos(t/210)*7*(1-pStig);
+  // snurren: vinkelfarten tager hurtigt til på vejen op
+  var spin = Math.pow(klem(t/620), 1.45) * 8.6;
 
-    if(t < T.samlet){
-      // Scene 1: ind fra siden mod bogstavformen
-      var p = klem((t - T.indStart - b.forsink) / (T.samlet - T.indStart - 260));
-      var e = udCubic(p);
-      x = b.sx + (b.hx - b.sx) * e;
-      y = b.sy + (b.hy - b.sy) * e;
-      s = 0.55 + 0.45 * e;
-      o = p <= 0 ? 0 : 1;
-    } else if(t < T.oploes){
-      // formationen holder og ånder let
-      x = b.hx; y = b.hy; s = 1;
-    } else if(t < T.hjoerne){
-      // Scene 2: "Hej" opløses, blobbene driver væk og falder til ro i baggrunden
-      var p2 = klem((t - T.oploes) / (T.hjoerne - T.oploes));
-      var e2 = indUdCubic(p2);
-      x = b.hx + (b.ox - b.hx) * e2;
-      y = b.hy + (b.oy - b.hy) * e2;
-      s = 1 - 0.35 * e2;
-      o = 1 - 0.45 * e2;
+  for(var i=0;i<alle.length;i++){
+    var b = alle[i];
+    var x, y, sx=1, sy=1, o=1;
+
+    if(t < T.slag){
+      /* ---------- Scene 1: én boble stiger, vugger og snurrer ---------- */
+      if(b.rolle === 'kerne'){
+        x = kerneX; y = kerneY;
+        var puls = 1 + 0.075*Math.sin(t/240) * (0.4+0.6*pStig);
+        sx = (0.52 + 0.48*udCubic(pStig)) * puls;
+        sy = (0.52 + 0.48*udCubic(pStig)) * (2-puls);   // dråbeagtig puls
+        o = pStig > 0 ? 1 : 0;
+      } else if(b.rolle === 'kreds'){
+        var rad = rKerne * b.radFaktor * (0.35 + 0.65*pStig) * (1 + 0.18*Math.sin(t/300 + b.faseA));
+        var v = b.vinkel + spin;
+        x = kerneX + Math.cos(v)*rad;
+        y = kerneY + Math.sin(v)*rad*0.72;              // fladtrykt bane = 3D-hvirvel
+        sx = sy = 0.5 + 0.5*pStig + 0.12*Math.sin(t/220 + b.faseB);
+        o = pStig > 0.05 ? 1 : 0;
+      } else {
+        x = kerneX; y = kerneY; sx = sy = 0.01; o = 0;   // splash venter
+      }
     } else {
-      // Scene 3: alt flyder ned i nederste højre hjørne og bliver én boble
-      var p3 = klem((t - T.hjoerne) / (T.samling - T.hjoerne));
-      var e3 = indUdCubic(p3);
-      var fx = b.hx + (b.ox - b.hx);
-      var fy = b.hy + (b.oy - b.hy);
-      x = fx + (boble.x - fx) * e3;
-      y = fy + (boble.y - fy) * e3;
-      s = (0.65) + (28/b.r - 0.65) * e3;       // skrumper til 56 px i diameter
-      o = 0.55 + 0.45 * e3;
-      if(t > T.samling){
-        var p4 = klem((t - T.samling) / (T.slut - T.samling));
-        o = 1 - p4;                             // boble-elementet tager over
-        x = boble.x; y = boble.y; s = 28/b.r;
+      var dt = (t - T.slag)/1000;                        // sekunder siden slaget
+      var pSaet = klem((t - T.slag) / (T.saet - T.slag));
+
+      if(b.rolle === 'splash' && b.pktIdx == null){
+        /* ---------- splash-dråber der sprøjter ud og trækkes tilbage ---------- */
+        var d2 = Math.max(0, dt - b.forsink/1000);
+        x = cx + b.vx*d2;
+        y = cy + b.vy*d2 + 0.5*b.g*d2*d2;
+        sx = sy = 0.95 - 0.4*klem(d2*2.2);
+        o = 1 - klem((d2-0.16)/0.3);                     // fades når den falder
+        if(o <= 0){ b.el.style.opacity = 0; continue; }
+      } else if(t < T.oploes){
+        /* ---------- morf til "Hej" med gyng, ikke præcis landing ---------- */
+        var fra_x, fra_y;
+        if(b.rolle === 'splash'){
+          var d3 = Math.max(0, dt - b.forsink/1000);
+          fra_x = cx + b.vx*d3*0.55; fra_y = cy + b.vy*d3*0.55 + 0.5*b.g*d3*d3*0.55;
+        } else if(b.rolle === 'kreds'){
+          fra_x = cx + Math.cos(b.vinkel+spin)*rKerne*b.radFaktor;
+          fra_y = cy + Math.sin(b.vinkel+spin)*rKerne*b.radFaktor*0.72;
+        } else { fra_x = cx; fra_y = cy; }
+        var e = fjeder(pSaet, 2.2, 5.4);                 // gynger sig på plads
+        x = fra_x + (b.hx - fra_x)*e + b.gyngeX*(1-pSaet)*Math.sin(pSaet*6.0);
+        y = fra_y + (b.hy - fra_y)*e + b.gyngeY*(1-pSaet)*Math.cos(pSaet*5.4);
+        var mål = (b.rolle === 'kerne') ? 0.92 : (b.rolle === 'kreds' ? 1.0 : 1.35);
+        var s0 = (b.rolle === 'kerne') ? 1 : (b.rolle === 'kreds' ? 1 : 0.9);
+        sx = sy = s0 + (mål - s0)*e;
+        // squash i selve slag-øjeblikket
+        if(t < T.slag + 130 && b.rolle !== 'splash'){
+          var sq = 1 - (t - T.slag)/130;
+          sx *= 1 + 0.26*sq; sy *= 1 - 0.20*sq;
+        }
+        // åndedrag mens "Hej" holder
+        if(t > T.saet){
+          var aand = 1 + 0.03*Math.sin(t/520 + b.faseA);
+          sx *= aand; sy *= 2-aand;
+          x += Math.sin(t/700 + b.faseA)*4;
+          y += Math.cos(t/820 + b.faseB)*4;
+        }
+        o = 1;
+      } else if(t < T.hjoerne){
+        /* ---------- Hej opløses, væsken driver væk ---------- */
+        var p2 = klem((t - T.oploes)/(T.hjoerne - T.oploes));
+        var e2 = indUdCubic(p2);
+        x = b.hx + (b.oX - b.hx)*e2;
+        y = b.hy + (b.oY - b.hy)*e2;
+        sx = sy = 1 - 0.38*e2;
+        o = 1 - 0.5*e2;
+      } else {
+        /* ---------- Scene 3: ned i hjørnet og bliv chat-boblen ---------- */
+        var p3 = klem((t - T.hjoerne)/(T.samling - T.hjoerne));
+        var e3 = indUdCubic(p3);
+        x = b.oX + (maalBoble.x - b.oX)*e3;
+        y = b.oY + (maalBoble.y - b.oY)*e3;
+        var slutS = 26/b.r;
+        sx = sy = 0.62 + (slutS - 0.62)*e3;
+        o = 0.55 + 0.45*e3;
+        if(t > T.samling){
+          o = 1 - klem((t - T.samling)/(T.slut - T.samling));
+          x = maalBoble.x; y = maalBoble.y; sx = sy = slutS;
+        }
       }
     }
-
-    // let wobble så væsken lever (kun imens den er i bevægelse/formation)
-    if(t < T.hjoerne){
-      var w = (t < T.samlet) ? 0 : 1;
-      x += Math.sin(t/760 + b.faseA) * 5 * w;
-      y += Math.cos(t/900 + b.faseB) * 5 * w;
-      s += Math.sin(t/640 + b.faseA) * 0.035 * w;
-    }
-
-    b.el.style.opacity = o;
-    b.el.style.transform = 'translate3d(' + (x - b.r) + 'px,' + (y - b.r) + 'px,0) scale(' + s + ')';
+    saet(b, x, y, sx, sy, o);
   }
 
-  // "Hej"-teksten smelter ind i blobbene og opløses igen
+  /* --- "Hej" smelter ind, gynger, og opløses igen --- */
   var hejO;
-  if(t < T.samlet) hejO = 0;
-  else if(t < T.hejFuld) hejO = klem((t - T.samlet) / (T.hejFuld - T.samlet));
+  if(t < T.hejInd) hejO = 0;
+  else if(t < T.saet) hejO = klem((t - T.hejInd)/(T.saet - T.hejInd));
   else if(t < T.hold) hejO = 1;
-  else hejO = 1 - klem((t - T.hold) / (T.oploes - T.hold));
+  else hejO = 1 - klem((t - T.hold)/(T.oploes - T.hold));
   elHej.style.opacity = hejO;
-  elHej.style.transform = 'translate(-50%,-50%) scale(' + (0.94 + 0.06*hejO) + ')';
+  var gyng = (t > T.slag && t < T.oploes) ? Math.exp(-(t-T.slag)/420)*3.0 : 0;
+  elHej.style.transform = 'translate(-50%,-50%) rotate(' +
+    (Math.sin((t-T.slag)/120)*gyng).toFixed(3) + 'deg) scale(' +
+    (0.93 + 0.07*hejO + 0.012*Math.sin(t/560)).toFixed(4) + ')';
 
   if(!navnStartet && t >= T.navnInd){ navnStartet = true; visNavn(); }
   if(navnStartet && t >= T.navnUd) elNavnLag.classList.remove('vis');
-  if(!bobleVist && t >= T.samling - 120){ bobleVist = true; elBoble.classList.add('ind'); }
+  if(!bobleVist && t >= T.samling - 140){ bobleVist = true; elBoble.classList.add('ind'); }
 
   if(t >= T.slut){ faerdig(); return; }
-  if(koerer) requestAnimationFrame(ramme);
+  requestAnimationFrame(ramme);
 }
 
 /* ---------------- Scene 2: kinetisk typografi ---------------- */
@@ -335,16 +425,15 @@ function bogstaver(el, tekst, forsink, trin){
   var tegn = Array.from(tekst);
   for(var i=0;i<tegn.length;i++){
     var s = document.createElement('span');
-    s.textContent = tegn[i] === ' ' ? ' ' : tegn[i];
+    s.textContent = tegn[i];
     s.style.animationDelay = (forsink + i*trin) + 'ms';
     el.appendChild(s);
   }
 }
 function visNavn(){
-  bogstaver(document.getElementById('hilsen'), hilsenTekst, 0, 26);
-  bogstaver(document.getElementById('navn'), navnTekst, 220, 52);
+  bogstaver(document.getElementById('hilsen'), hilsenTekst, 0, 12);
+  bogstaver(document.getElementById('navn'), navnTekst, 90, 24);
   elNavnLag.classList.add('vis');
-  // reflow, så animationen starter forfra hver gang
   void elNavnLag.offsetWidth;
   elNavnLag.classList.add('kor');
 }
@@ -354,7 +443,7 @@ function faerdig(){
   koerer = false;
   elHej.style.opacity = 0;
   elNavnLag.classList.remove('vis');
-  for(var i=0;i<blobs.length;i++) blobs[i].el.style.opacity = 0;
+  for(var i=0;i<alle.length;i++) alle[i].el.style.opacity = 0;
   elBoble.classList.add('ind');
   elSpring.classList.remove('vis');
   if(!iIframe) elFortsaet.classList.add('vis');
@@ -366,14 +455,13 @@ function faerdig(){
   }
 }
 
-/* klik/tap hvor som helst springer til slut-tilstanden */
+/* klik/tap/Esc springer til slut-tilstanden */
 function spring(){ if(koerer){ koerer = false; faerdig(); } }
 scene.addEventListener('pointerdown', spring, {passive:true});
 scene.addEventListener('click', spring);
-window.addEventListener('keydown', function(e){ if(e.key === 'Escape' || e.key === ' ') spring(); });
-
-window.addEventListener('resize', function(){ maal(); });
-window.addEventListener('orientationchange', function(){ setTimeout(maal, 160); });
+window.addEventListener('keydown', function(e){ if(e.key==='Escape'||e.key===' ') spring(); });
+window.addEventListener('resize', maal);
+window.addEventListener('orientationchange', function(){ setTimeout(maal,160); });
 
 /* ---------------- start ---------------- */
 var alleredeSet = false;
@@ -382,16 +470,14 @@ var mindreBevaegelse = window.matchMedia && window.matchMedia('(prefers-reduced-
 
 byg();
 if((kunFoersteGang && alleredeSet) || mindreBevaegelse){
-  // Fallback/respekt for reduceret bevægelse: vis navnet kort og gå til slut
   visNavn();
-  elSpring.classList.remove('vis');
-  setTimeout(function(){ faerdig(); }, mindreBevaegelse ? 1400 : 0);
+  setTimeout(faerdig, mindreBevaegelse ? 1400 : 0);
 } else {
   elSpring.classList.add('vis');
   requestAnimationFrame(ramme);
 }
 
-// lille hjælper til integrationen i login
+// hjælper til integrationen i login
 window.loklyIntro = {
   skalVises: function(){ try { return !localStorage.getItem(NOEGLE); } catch(e){ return true; } },
   nulstil: function(){ try { localStorage.removeItem(NOEGLE); } catch(e){} }
