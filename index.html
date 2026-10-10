@@ -199,6 +199,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 .req-form p{font-size:13px;color:var(--text2)}
 .ov-link{display:block;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--cyan);font-weight:600;text-decoration:none}
 .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+/* Stats-stribe på Overblik (10/10-2026): ingen kasser, kun tal + label og en tynd skillelinje */
+.kpi-stribe{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:2px 0 18px;padding:0 2px 16px;border-bottom:1px solid var(--border)}
+.kpi{padding:2px 14px;min-width:0}
+.kpi+.kpi{border-left:1px solid var(--border)}
+.kpi-num{font-size:30px;font-weight:800;line-height:1.1;color:#12564b;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi-lab{margin-top:3px;font-size:12px;font-weight:600;color:var(--text2)}
+.kpi-demo{margin:-12px 0 16px;font-size:11.5px;color:var(--text2)}
+@media(max-width:620px){.kpi-stribe{grid-template-columns:1fr 1fr;row-gap:16px;padding-bottom:14px}
+  .kpi{padding:2px 10px}
+  .kpi:nth-child(odd){border-left:0}
+  .kpi:nth-child(even){border-left:1px solid var(--border)}
+  .kpi-num{font-size:26px}}
+/* Rene systemkort (Alex 10/10-2026): kun ikon, navn og én status-chip - resten i halvvinduet */
+.sys-card{min-height:150px;justify-content:space-between;gap:10px;padding:22px 22px}
+.sys-card .sys-ic svg{display:block;width:24px;height:24px}
+.sys-card.sys-new{min-height:150px;font-size:16px;font-weight:700;gap:8px}
+.sys-card.sys-new .sys-ic svg{width:22px;height:22px}
+@media(max-width:620px){.sys-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .sys-card,.sys-card.sys-new{min-height:132px;padding:16px 15px;border-radius:18px}
+  .sys-card h4{font-size:17px}}
 .sys-card{position:relative;overflow:hidden;background:linear-gradient(150deg,#176b5d 0%,#12564b 55%,#0e453d 100%);color:#fff;border:0;border-radius:22px;padding:26px 24px;min-height:190px;display:flex;flex-direction:column;gap:8px;justify-content:space-between;box-shadow:0 10px 30px rgba(14,69,61,.22);transition:transform .25s ease,box-shadow .25s ease}.sys-card::before{content:'';position:absolute;inset:-40% -20% auto auto;width:70%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.22),rgba(255,255,255,0) 70%);pointer-events:none}.sys-card:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(14,69,61,.3)}.sys-card .sys-ic{font-size:30px;line-height:1}.sys-card.sys-new{align-items:center;justify-content:center;font-size:20px;background:rgba(18,86,75,.08);color:var(--text);border:2px dashed rgba(18,86,75,.35);box-shadow:none}.sys-card.sys-new::before{display:none}
 .sys-card h4{margin:0;font-size:22px;font-weight:800;color:#fff;letter-spacing:-.01em}
 .sys-card .sys-url{font-size:12.5px;color:rgba(255,255,255,.75);word-break:break-all}
@@ -397,6 +417,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
         <div class="stat-card"><div class="stat-num" id="ovDone">—</div><div class="stat-label">Bygget til dig</div></div>
         <div class="stat-card"><div class="stat-num" id="ovMsgs">—</div></div><div class="stat-label">Beskeder</div></div>
       </div>
+      <div class="kpi-stribe" id="ovKpi">
+        <div class="kpi"><div class="kpi-num" id="kpiSagerIDag">–</div><div class="kpi-lab">Sager i dag</div></div>
+        <div class="kpi"><div class="kpi-num" id="kpiAabneSager">–</div><div class="kpi-lab">Åbne sager</div></div>
+        <div class="kpi"><div class="kpi-num" id="kpiTimerUge">–</div><div class="kpi-lab">Timer denne uge</div></div>
+        <div class="kpi"><div class="kpi-num" id="kpiAabneOensker">–</div><div class="kpi-lab">Åbne ønsker</div></div>
+      </div>
+      <div class="kpi-demo" id="ovKpiDemo" hidden>demo-tal</div>
       <div class="req-form" id="ovLinksBox"><h3>Dine systemer</h3><div class="sys-grid" id="ovLinks"></div></div>
       <div class="req-form" id="ovOnbBox" hidden style="display:none"><h3>Tjekliste</h3><div class="req-list" id="ovOnb"></div></div>
       <div class="req-form" id="ovUgeBox" hidden style="display:none">
@@ -600,7 +627,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261010-2353';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261011-0000';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -1582,15 +1609,53 @@ function reqSystemChanged(){const v=($('reqSystem')||{}).value||'';const t=$('re
 async function startRequest(system,kind){switchTab('Requests',$('navRequests'));if(!SYSTEMS.length){try{const r=await fetch('/api/overview');if(r.ok){const o=await r.json();SYSTEMS=o.links.map(l=>({navn:l.navn||l.url,url:l.url}));}}catch(e){}}
   fillReqSystem();$('reqSystem').value=system||'';if($('reqKind'))$('reqKind').value=(kind==='fejl'?'fejl':'oenske');reqSystemChanged();setTimeout(()=>$('reqText').focus(),50);}
 // ── Overblik ──────────────────────────────────────────────────────────────────
+// Egne ikoner (ingen emoji, Alex 10/10-2026): 24x24, stroke 1.6, runde ender, arver tekstfarven
+const _SVG=(d)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const IKON={
+  mail:  _SVG('<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3.8 7l7.3 5.4a1.5 1.5 0 0 0 1.8 0L20.2 7"/>'),
+  plan:  _SVG('<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="9" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.1" fill="currentColor" stroke="none"/>'),
+  chat:  _SVG('<path d="M20.5 12.3c0 3.9-3.8 7-8.5 7-1 0-2-.14-2.9-.4L4 20.5l1.3-3.5A6.6 6.6 0 0 1 3.5 12.3c0-3.9 3.8-7 8.5-7s8.5 3.1 8.5 7z"/>'),
+  web:   _SVG('<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.4 3.5 8.5S14.3 18.1 12 20.5c-2.3-2.4-3.5-5.4-3.5-8.5S9.7 5.9 12 3.5z"/>'),
+  lager: _SVG('<path d="M3.5 8.2 12 4l8.5 4.2v7.6L12 20l-8.5-4.2V8.2z"/><path d="M3.5 8.2 12 12.4l8.5-4.2M12 12.4V20"/>'),
+  plus:  _SVG('<path d="M12 5.5v13M5.5 12h13"/>'),
+  andet: _SVG('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/>'),
+};
+function sysIkon(navn){const n=String(navn||'');
+  if(/mail|post|e-?mail/i.test(n))return IKON.mail;
+  if(/plan|ordre|kalender|booking/i.test(n))return IKON.plan;
+  if(/chat|assistent|medarbejder|telefon|svar/i.test(n))return IKON.chat;
+  if(/hjemmeside|web|site|portal/i.test(n))return IKON.web;
+  if(/lager|varer|depot/i.test(n))return IKON.lager;
+  return IKON.andet;}
+
+// Stats-striben: Lokly Plan-tal + åbne ønsker. Henter ved visning af Overblik og hvert 5. minut.
+let STATS_TIMER=null;
+async function loadStats(){
+  const saet=(id,v)=>{const el=$(id);if(el)el.textContent=(v===null||v===undefined)?'–':v;};
+  try{
+    const r=await fetch('/api/stats');
+    if(!r.ok){saet('kpiSagerIDag',null);saet('kpiAabneSager',null);saet('kpiTimerUge',null);return;}
+    const d=await r.json();
+    const p=d.plan||{};
+    saet('kpiSagerIDag',p.sager_i_dag);
+    saet('kpiAabneSager',p.aabne_sager);
+    saet('kpiTimerUge',(p.timer_uge===null||p.timer_uge===undefined)?null:String(p.timer_uge).replace('.',','));
+    saet('kpiAabneOensker',d.aabne_oensker===null||d.aabne_oensker===undefined?'–':d.aabne_oensker);
+    const dm=$('ovKpiDemo');if(dm)dm.hidden=!d.demo;
+  }catch(e){saet('kpiSagerIDag',null);saet('kpiAabneSager',null);saet('kpiTimerUge',null);}
+  if(!STATS_TIMER)STATS_TIMER=setInterval(()=>{const t=$('tabDashboard');if(t&&t.classList.contains('active'))loadStats();},5*60*1000);
+}
+
 async function loadOverview(){
+  loadStats();
   try{const r=await fetch('/api/overview');if(!r.ok)return;const o=await r.json();
     $('ovOpen').textContent=o.open.length;$('ovDone').textContent=o.done.length+o.leverancer.length;$('ovMsgs').textContent=o.messages;if($('cbBadge')){$('cbBadge').textContent=o.messages||0;$('cbBadge').hidden=!o.messages;}
     if(false){$('ovKonsulent').hidden=false;$('ovMoede').hidden=false;$('ovMoede').innerHTML=esc(o.naeste_moede);}else{$('ovKonsulent').hidden=true;$('ovMoede').hidden=true;}
     SYSTEMS=o.links.map(l=>({navn:l.navn||l.url,url:l.url}));fillReqSystem();
     const openBy=n=>o.open.filter(r=>(r.system||'')===n).length, doneBy=n=>o.done.filter(r=>(r.system||'')===n).length;
     $('ovLinks').innerHTML=SYSTEMS.map((l,i)=>{const n=openBy(l.navn),d=doneBy(l.navn);let host='';try{host=new URL(l.url).host}catch(e){host=l.url}
-      return `<div class="sys-card sys-click" onclick="openSystem(${i})"><div class="sys-ic">${/mail/i.test(l.navn)?'✉️':/plan|ordre/i.test(l.navn)?'🗓️':/hjemmeside|web|site/i.test(l.navn)?'🌐':'🧩'}</div><h4>${esc(l.navn)}</h4><div class="sys-url">${esc(host)}</div><span class="sys-chip ${n?'open':''}">${n?n+' ændring'+(n>1?'er':'')+' i gang':(d?d+' ændring'+(d>1?'er':'')+' leveret':'Kører')}</span><div class="sys-actions"><a href="${esc(l.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Åbn</a><span style="font-size:14px;font-weight:600;color:rgba(255,255,255,.9);align-self:center;margin-left:auto">Skriv en ændring ›</span></div></div>`;}).join('')
-      +`<div class="sys-card sys-new" onclick="openSystem(-1)"><div><b>+ Nyt system</b></div></div>`;
+      return `<div class="sys-card sys-click" onclick="openSystem(${i})"><div class="sys-ic">${sysIkon(l.navn)}</div><h4>${esc(l.navn)}</h4><span class="sys-chip ${n?'open':''}">${n?n+' i gang':(d?'Opdateret':'Kører')}</span></div>`;}).join('')
+      +`<div class="sys-card sys-new" onclick="openSystem(-1)"><div class="sys-ic">${IKON.plus}</div><div>Nyt system</div></div>`;
     const lev=[...o.done.map(d=>`<div class="ov-item">${esc(d.svar||d.text)}<br><small>Ønske #${d.id} · færdigt ${fmtTs(d.updated)}</small></div>`),...o.leverancer.map(l=>`<div class="ov-item">${esc(l)}</div>`)];
     $('ovLeverancer').innerHTML=lev.length?lev.join(''):'<div class="req-empty">Intet endnu. Det første, vi bygger, dukker op her.</div>';
     $('ovAftaleBox').hidden=true;$('ovAftale').textContent=o.aftale||'';
