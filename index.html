@@ -600,7 +600,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261010-2336';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261010-2337';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -666,7 +666,7 @@ async function enterApp(data){
   } else {
     $('headerActions').style.display='';
     // Customer — show Chat + Overblik + Indstillinger
-    if((data.company||'')==='Testfirma ApS'&&!window.__iDevFrame()){$('devbar').hidden=false;if(localStorage.getItem('lokly_visning')==='mobil')devVisning('mobil');}
+    if((data.company||'')==='Testfirma ApS'&&!window.__iDevFrame()){document.body.prepend($('devbar'));$('devbar').hidden=false;if(localStorage.getItem('lokly_visning')==='mobil')devVisning('mobil');}
     $('navAdmin').hidden=true; $('navDashboard').hidden=false; $('navRequests').hidden=true; $('navDocs').hidden=false; updateReqBadge(data.open_requests||0); loadRequests();
     document.body.classList.add('onepage'); $('topLinks').hidden=false; $('chatBubble').hidden=false; document.querySelectorAll('.tilbage-ov').forEach(b=>b.hidden=false);
     switchTab('Dashboard',$('navDashboard'));  // Overblik er forsiden for kunder; alt andet nås fra toppen (onepage, Alex 9/10-2026)
@@ -1788,7 +1788,7 @@ async function changePassword(){
   if(r.ok){$('pwOld').value='';$('pwNew').value='';}
 }
 </script>
-<button id="chatBubble" hidden onclick="switchTab('Chat',$('navChat'))" aria-label="Chat"><span class="cb-core"></span><span class="cb-txt">💬</span><span class="cb-badge" id="cbBadge" hidden>0</span></button>
+<button id="chatBubble" hidden onclick="switchTab('Chat',$('navChat'))" aria-label="Chat"><span class="cb-core"></span><span class="cb-txt"></span><span class="cb-badge" id="cbBadge" hidden>0</span></button>
 <style>
 #chatBubble{position:fixed;right:18px;bottom:max(22px,env(safe-area-inset-bottom));width:84px;height:84px;border:0;padding:0;background:none;cursor:pointer;z-index:70;animation:cbFloat 5s ease-in-out infinite;touch-action:manipulation}#chatBubble[hidden]{display:none}
 #chatBubble .cb-core{position:absolute;inset:0;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.55),rgba(31,122,92,.95) 45%,rgba(18,86,75,1) 100%);box-shadow:0 14px 34px rgba(14,69,61,.35),inset 0 0 22px rgba(255,255,255,.25);animation:cbMorph 3s ease-in-out infinite;will-change:border-radius}
