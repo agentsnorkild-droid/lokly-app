@@ -336,7 +336,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <button class="btn-new-chat" id="btnNewChat" onclick="newChat()" title="Ny chat">＋</button>
     </div>
   </div>
-  <div id="devbar" hidden style="display:flex;align-items:center;gap:10px;background:#1d2a3a;color:#fff;font-size:12.5px;padding:5px 12px"><b>Dev</b><span>Visning</span><button id="devWeb" onclick="devVisning('web')" style="font:inherit;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:#fff;color:#1d2a3a;cursor:pointer">Web</button><button id="devMobil" onclick="devVisning('mobil')" style="font:inherit;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer">Mobil</button><span style="flex:1"></span><button onclick="location.reload()" style="font:inherit;padding:3px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer">↻ Opdater</button></div>
+  <div id="devbar" hidden style="display:flex;align-items:center;gap:10px;background:#1d2a3a;color:#fff;font-size:12.5px;padding:5px 12px;position:relative;z-index:200"><b>Dev</b><span>Visning</span><button id="devWeb" onclick="devVisning('web')" style="font:inherit;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:#fff;color:#1d2a3a;cursor:pointer">Web</button><button id="devMobil" onclick="devVisning('mobil')" style="font:inherit;padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer">Mobil</button><span style="flex:1"></span><button onclick="location.reload()" style="font:inherit;padding:3px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer">↻ Opdater</button></div>
   <div id="nyVersion" onclick="location.reload(true)" style="display:none;position:fixed;bottom:var(--nav-h);left:0;right:0;z-index:200;background:var(--cyan);color:#fff;padding:12px 14px;font-size:14px;font-weight:600;text-align:center;cursor:pointer;box-shadow:0 -2px 12px rgba(0,0,0,.12)">Ny version klar — tryk her for at opdatere</div>
 <div class="tab-content">
 
@@ -603,7 +603,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261009-1556';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261010-2321';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -1836,7 +1836,7 @@ async function sendSystem(){const text=$('ssText').value.trim();if(!text){$('ssM
 <script>
 function devVisning(m){localStorage.setItem('lokly_visning',m);const on=m==='mobil';$('devMobil').style.background=on?'#fff':'transparent';$('devMobil').style.color=on?'#1d2a3a':'#fff';$('devWeb').style.background=on?'transparent':'#fff';$('devWeb').style.color=on?'#fff':'#1d2a3a';
   let f=document.getElementById('devFrame');
-  if(on){if(!f){f=document.createElement('div');f.id='devFrame';f.style.cssText='position:fixed;inset:34px 0 0 0;background:#2b2b2b;display:flex;align-items:center;justify-content:center;z-index:150';f.innerHTML='<iframe src="'+location.pathname+'" style="width:393px;height:852px;max-height:92vh;border:10px solid #111;border-radius:40px;background:#fff"></iframe>';document.body.appendChild(f);}}
+  if(on){if(!f){const top=($('devbar')&&$('devbar').offsetHeight)||34;f=document.createElement('div');f.id='devFrame';f.style.cssText='position:fixed;inset:'+top+'px 0 0 0;background:#2b2b2b;display:flex;align-items:center;justify-content:center;z-index:150';f.innerHTML='<button onclick="devVisning(\'web\')" style="position:absolute;top:10px;right:12px;font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.5);background:#fff;color:#1d2a3a;cursor:pointer;z-index:1">✕ Tilbage til web</button><iframe src="'+location.pathname+'" style="width:393px;height:852px;max-width:96vw;max-height:88vh;border:10px solid #111;border-radius:40px;background:#fff"></iframe>';document.body.appendChild(f);}}
   else if(f){f.remove();}}
 </script>
 <style>body.onepage .bottom-nav{display:none!important}body.onepage .tab-content{padding-bottom:20px}.toplink{background:none;border:0;font:inherit;font-size:13.5px;font-weight:600;color:var(--text2);cursor:pointer;padding:6px 8px;border-radius:8px}.toplink:hover{background:var(--bg);color:var(--text)}.tilbage-ov{background:none;border:0;font:inherit;font-size:14px;font-weight:600;color:var(--cyan);cursor:pointer;padding:10px 4px 0}#topLinks[hidden]{display:none!important}body.onepage #headerActions{display:none!important}</style>
