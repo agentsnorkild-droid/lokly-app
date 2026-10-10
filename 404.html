@@ -600,7 +600,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261010-2335';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261010-2336';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -670,10 +670,10 @@ async function enterApp(data){
     $('navAdmin').hidden=true; $('navDashboard').hidden=false; $('navRequests').hidden=true; $('navDocs').hidden=false; updateReqBadge(data.open_requests||0); loadRequests();
     document.body.classList.add('onepage'); $('topLinks').hidden=false; $('chatBubble').hidden=false; document.querySelectorAll('.tilbage-ov').forEach(b=>b.hidden=false);
     switchTab('Dashboard',$('navDashboard'));  // Overblik er forsiden for kunder; alt andet nås fra toppen (onepage, Alex 9/10-2026)
-    $('settingsReadOnly').style.display='none'; $('settingsEditable').style.display='';
-    $('setCompanyRO').textContent=data.company;
-    $('editEmail').value=data.email||''; $('editPhone').value=data.phone||'';
-    $('editAddress').value=data.address||''; $('editHours').value=data.hours||'';
+    // Kunder kan IKKE rette firmaoplysninger (Alex 10/10-2026): ren visning
+    $('settingsReadOnly').style.display=''; $('settingsEditable').style.display='none';
+    setField('setCompany',data.company); setField('setEmail',data.email);
+    setField('setPhone',data.phone); setField('setAddress',data.address); setField('setHours',data.hours);
     initPushUI();
     const want=new URLSearchParams(location.search).get('tab');
     // Fra en notifikation om færdig research: ?tab=Admin&lead=<id> -> åbn netop det lead.
