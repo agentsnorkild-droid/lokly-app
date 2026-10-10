@@ -331,7 +331,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <span class="company-badge" id="companyName"></span>
     </div>
     <span class="admin-badge" id="adminBadge" style="display:none">Admin</span>
-    <div id="topLinks" hidden style="display:flex;gap:4px;margin-left:auto;margin-right:6px"><button class="toplink" onclick="switchTab('Docs',$('navDocs'))">Dokumenter</button><button class="toplink" onclick="switchTab('Settings',$('navSettings'))">Indstillinger</button></div>
+    <div id="topLinks" hidden style="display:flex;margin-left:auto;margin-right:6px;position:relative"><button class="burger" id="burgerBtn" aria-label="Menu" onclick="toggleBurger(event)">&#9776;</button><div id="burgerMenu" class="burger-menu" hidden><button class="burger-item" onclick="closeBurger();switchTab('Docs',$('navDocs'))">Dokumenter</button><button class="burger-item" onclick="closeBurger();switchTab('Settings',$('navSettings'))">Indstillinger</button><div class="burger-sep"></div><button class="burger-item" onclick="closeBurger();doLogout()">Log ud</button></div></div>
     <div class="header-actions" id="headerActions" style="display:none">
       <button class="btn-header" id="btnSearch" onclick="toggleSearch()" title="Søg">🔍</button>
       <button class="btn-new-chat" id="btnNewChat" onclick="newChat()" title="Ny chat">＋</button>
@@ -604,7 +604,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261010-2331';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261010-2332';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -1836,11 +1836,15 @@ async function sendSystem(){const text=$('ssText').value.trim();if(!text){$('ssM
 
 <script>
 window.__iDevFrame=function(){try{return location.search.indexOf('devframe=1')>-1||window.top!==window.self||!!window.frameElement;}catch(e){return true;}};
+function toggleBurger(e){e&&e.stopPropagation();const m=$('burgerMenu');m.hidden=!m.hidden;}
+function closeBurger(){const m=$('burgerMenu');if(m)m.hidden=true;}
+document.addEventListener('click',function(e){const m=$('burgerMenu');if(m&&!m.hidden&&!e.target.closest('#topLinks'))m.hidden=true;});
 function devVisning(m){if(window.__iDevFrame())return;localStorage.setItem('lokly_visning',m);const on=m==='mobil';$('devMobil').style.background=on?'#fff':'transparent';$('devMobil').style.color=on?'#1d2a3a':'#fff';$('devWeb').style.background=on?'transparent':'#fff';$('devWeb').style.color=on?'#fff':'#1d2a3a';
   let f=document.getElementById('devFrame');
   if(on){if(!f){const top=($('devbar')&&$('devbar').offsetHeight)||34;f=document.createElement('div');f.id='devFrame';f.style.cssText='position:fixed;inset:'+top+'px 0 0 0;background:#2b2b2b;display:flex;align-items:center;justify-content:center;z-index:150';f.innerHTML='<button onclick="devVisning(\'web\')" style="position:absolute;top:10px;right:12px;font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.5);background:#fff;color:#1d2a3a;cursor:pointer;z-index:1">✕ Tilbage til web</button><iframe src="'+location.pathname+'?devframe=1" style="width:393px;height:852px;max-width:96vw;max-height:88vh;border:10px solid #111;border-radius:40px;background:#fff"></iframe>';document.body.appendChild(f);}}
   else if(f){f.remove();}}
 </script>
+<style>.burger{background:none;border:1px solid var(--border);border-radius:10px;font-size:20px;line-height:1;padding:6px 10px;color:var(--text);cursor:pointer}.burger:hover{background:var(--bg)}.burger-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:190px;background:var(--surface,#fff);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:6px;z-index:300;display:flex;flex-direction:column}.burger-menu[hidden]{display:none!important}.burger-item{background:none;border:0;font:inherit;font-size:14px;text-align:left;padding:10px 12px;border-radius:8px;color:var(--text);cursor:pointer}.burger-item:hover{background:var(--bg)}.burger-sep{height:1px;background:var(--border);margin:4px 6px}</style>
 <style>body.onepage .bottom-nav{display:none!important}body.onepage .tab-content{padding-bottom:20px}.toplink{background:none;border:0;font:inherit;font-size:13.5px;font-weight:600;color:var(--text2);cursor:pointer;padding:6px 8px;border-radius:8px}.toplink:hover{background:var(--bg);color:var(--text)}.tilbage-ov{background:none;border:0;font:inherit;font-size:14px;font-weight:600;color:var(--cyan);cursor:pointer;padding:10px 4px 0}#topLinks[hidden]{display:none!important}body.onepage #headerActions{display:none!important}</style>
 <style>.sys-card.sys-chat{background:linear-gradient(150deg,#1f7a5c 0%,#176b5d 60%,#12564b 100%);color:#fff;border-color:transparent}.sys-card.sys-chat h4,.sys-card.sys-chat .sys-url{color:#fff}.sys-card.sys-chat .sys-chip{background:rgba(255,255,255,.18);color:#fff;border-color:transparent}.sys-card.sys-chat .sys-actions span{color:#fff!important}</style>
 <div id="hejOverlay" hidden><div id="hejBlob"><div id="hejText"></div></div><div id="hejParts"></div></div>
