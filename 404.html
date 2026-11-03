@@ -130,18 +130,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .stat-card .stat-num{font-size:32px;font-weight:700;color:var(--cyan);line-height:1;margin-bottom:6px}
 .stat-card .stat-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
 .admin-section-header{display:flex;align-items:center;justify-content:space-between}
-.kontor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:4px}
-.kontor-rum{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
-.kontor-figur{width:30px;height:30px;border-radius:50%;background:var(--text2);flex-shrink:0}
-.kontor-figur.status-kører{background:var(--cyan);animation:kontorPuls 1.6s ease-in-out infinite}
-.kontor-figur.status-faerdig{background:var(--green)}
-.kontor-figur.status-fejl{background:var(--red);animation:kontorBlink 1s step-end infinite}
-.kontor-figur.status-venter{background:var(--orange)}
-.kontor-navn{font-size:13px;font-weight:600}
-.kontor-status{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.kontor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:4px}
+@media (max-width:520px){.kontor-grid{grid-template-columns:1fr}}
+.kontor-rum{--dept:var(--text2);position:relative;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--dept) 10%,var(--surface)) 0%,var(--surface) 72%);border:1px solid var(--border);border-top:3px solid var(--dept);border-radius:18px;padding:20px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;cursor:pointer;box-shadow:0 1px 2px rgba(26,43,42,.05),0 10px 22px -16px rgba(26,43,42,.35);transition:box-shadow .2s,transform .2s}
+.kontor-rum:hover{transform:translateY(-2px);box-shadow:0 3px 8px rgba(26,43,42,.07),0 16px 30px -16px rgba(26,43,42,.4)}
+.kontor-rum.expanded{grid-column:1/-1}
+.kontor-rum.tom{opacity:.65}
+.kontor-dept-1{--dept:var(--cyan)}
+.kontor-dept-2{--dept:var(--green)}
+.kontor-dept-3{--dept:var(--orange)}
+.kontor-dept-4{--dept:var(--red)}
+.kontor-badge{display:inline-flex;align-items:center;gap:6px;background:var(--text);color:var(--bg);font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;margin-bottom:10px}
+.kontor-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--dept);flex-shrink:0}
+.kontor-floor{position:relative;width:88px;height:44px;margin:2px 0 6px;display:flex;align-items:flex-end;justify-content:center}
+.kontor-floor::before{content:"";position:absolute;inset:0;background:color-mix(in srgb,var(--dept) 28%,transparent);border-radius:50%;transform:perspective(60px) rotateX(55deg);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--dept) 45%,transparent)}
+.kontor-figur-wrap{position:relative;z-index:1;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+.kontor-figur{width:30px;height:30px;color:var(--dept);filter:drop-shadow(0 2px 2px rgba(26,43,42,.15))}
+.kontor-rum.tom .kontor-figur{color:var(--text2);opacity:.6}
+.kontor-rum.status-kører .kontor-figur-wrap{animation:kontorBob 1.6s ease-in-out infinite}
+.kontor-dot{position:absolute;bottom:-1px;right:-1px;width:12px;height:12px;border-radius:50%;background:var(--text2);border:2px solid var(--surface);z-index:2}
+.kontor-rum.status-kører .kontor-dot{background:var(--cyan);animation:kontorPuls 1.6s ease-in-out infinite}
+.kontor-rum.status-faerdig .kontor-dot{background:var(--green)}
+.kontor-rum.status-fejl .kontor-dot{background:var(--red);animation:kontorBlink 1s step-end infinite}
+.kontor-rum.status-venter .kontor-dot{background:var(--orange)}
+.kontor-navn{font-size:15px;font-weight:700}
+.kontor-status{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
 .kontor-tid{font-size:11px;color:var(--text2)}
-@keyframes kontorPuls{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.75}}
+.kontor-antal{font-size:11px;color:var(--text2)}
+@keyframes kontorPuls{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.5}}
 @keyframes kontorBlink{50%{opacity:.25}}
+@keyframes kontorBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.kontor-detalje{margin-top:10px;padding-top:12px;border-top:1px solid var(--border);width:100%;text-align:left;display:flex;flex-direction:column;gap:10px}
+.kontor-detalje-systemer{display:flex;flex-wrap:wrap;gap:8px}
+.kontor-chip{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--surface2);color:var(--text2);display:inline-flex;align-items:center;gap:6px}
+.kontor-chip-dot{width:7px;height:7px;border-radius:50%;background:var(--text2);flex-shrink:0}
+.kontor-chip-dot.status-kører{background:var(--cyan);animation:kontorPuls 1.6s ease-in-out infinite}
+.kontor-chip-dot.status-faerdig{background:var(--green)}
+.kontor-chip-dot.status-fejl{background:var(--red);animation:kontorBlink 1s step-end infinite}
+.kontor-chip-dot.status-venter{background:var(--orange)}
 .kontor-feed{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto}
 .kontor-feed-item{font-size:13px;padding:8px 10px;border-radius:8px;background:var(--surface2);display:flex;gap:8px;align-items:baseline}
 .kontor-feed-tid{color:var(--text2);font-variant-numeric:tabular-nums;flex-shrink:0}
@@ -676,7 +702,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261103-1808';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261103-2238';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=['app.lokly.dk','lokly.dk','www.lokly.dk'].includes(location.hostname)?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -720,20 +746,42 @@ function switchTab(name, btn){document.body.classList.toggle('chat-open',name===
 
 const KONTOR_LABELS={'lokly-plan-deploy':'Lokly Plan','lokly-mail-deploy':'Lokly Mail','lokly-app-deploy':'Lokly App','sps-support':'SPS-support','laase-synk':'Låse-synk'};
 const KONTOR_STATUS_TXT={'kører':'Kører','faerdig':'Færdig','fejl':'Fejl','venter':'Venter'};
+const KONTOR_FIGUR_SVG='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.2" r="4"/><path d="M12 13c-5.2 0-9.4 3.4-9.4 8.6V22h18.8v-.4c0-5.2-4.2-8.6-9.4-8.6z"/></svg>';
 function kontorTid(ts){try{const d=new Date(ts);if(isNaN(d))return ts;return d.toLocaleString('da-DK',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return ts;}}
+let kontorData={}, kontorAaben=null;
+function kontorNavn(sys){return KONTOR_LABELS[sys]||sys;}
+function toggleKontorRum(navn){kontorAaben=(kontorAaben===navn)?null:navn; renderKontorGrid();}
+function renderKontorGrid(){
+  const afdelinger=kontorData.afdelinger||[];
+  $('kontorGrid').innerHTML = afdelinger.map((a,i)=>{
+    const status=a.status||'', tom=!status, statusTxt=tom?'Ingen aktivitet':(KONTOR_STATUS_TXT[status]||status);
+    const antal=a.systemer.length, aaben=kontorAaben===a.navn;
+    let detalje='';
+    if(aaben){
+      const chips=a.systemer.length ? a.systemer.map(s=>`<span class="kontor-chip"><span class="kontor-chip-dot status-${esc(s.status||'')}"></span>${esc(kontorNavn(s.system))} — ${esc(KONTOR_STATUS_TXT[s.status]||s.status||'')}</span>`).join('') : '<span class="kontor-chip">Ingen systemer endnu</span>';
+      const feed=a.haendelser.length ? a.haendelser.map(h=>`<div class="kontor-feed-item"><span class="kontor-feed-tid">${esc(kontorTid(h.ts))}</span><span>${esc(kontorNavn(h.system))} — ${esc(h.status||'')}${h.tekst?': '+esc(h.tekst):''}</span></div>`).join('') : '<div class="req-empty">Ingen hændelser i denne afdeling endnu.</div>';
+      detalje=`<div class="kontor-detalje" onclick="event.stopPropagation()"><div class="kontor-detalje-systemer">${chips}</div><div class="kontor-feed" style="max-height:220px">${feed}</div></div>`;
+    }
+    return `<div class="kontor-rum kontor-dept-${i+1} ${tom?'tom':''} status-${esc(status)} ${aaben?'expanded':''}" onclick="toggleKontorRum('${esc(a.navn)}')">
+      <div class="kontor-badge"><span class="kontor-badge-dot"></span>${antal} system${antal===1?'':'er'}</div>
+      <div class="kontor-floor"><div class="kontor-figur-wrap"><div class="kontor-figur">${KONTOR_FIGUR_SVG}</div><div class="kontor-dot"></div></div></div>
+      <div class="kontor-navn">${esc(a.navn)}</div>
+      <div class="kontor-status">${esc(statusTxt)}${a.sidst_opdateret?' · '+esc(kontorTid(a.sidst_opdateret)):''}</div>
+      ${detalje}
+    </div>`;
+  }).join('');
+}
 async function loadKontorData(){
   try{
     const r=await fetch('/api/admin/kontor');
     if(!r.ok){$('kontorGrid').innerHTML='<div class="req-empty">Kunne ikke hente.</div>';return;}
     const d=await r.json();
-    const systemer=d.systemer||[], haendelser=d.haendelser||[];
+    kontorData=d;
+    const haendelser=d.haendelser||[];
     $('kontorOpdateret').textContent='Opdateret '+new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
-    $('kontorGrid').innerHTML = systemer.length ? systemer.map(s=>{
-      const navn=KONTOR_LABELS[s.system]||s.system, status=s.status||'', statusTxt=KONTOR_STATUS_TXT[status]||status;
-      return `<div class="kontor-rum"><div class="kontor-figur status-${esc(status)}"></div><div class="kontor-navn">${esc(navn)}</div><div class="kontor-status">${esc(statusTxt)}</div><div class="kontor-tid">${esc(kontorTid(s.ts))}</div></div>`;
-    }).join('') : '<div class="req-empty">Ingen aktivitet logget endnu.</div>';
+    renderKontorGrid();
     $('kontorFeed').innerHTML = haendelser.length ? haendelser.map(h=>{
-      const navn=KONTOR_LABELS[h.system]||h.system;
+      const navn=kontorNavn(h.system);
       return `<div class="kontor-feed-item"><span class="kontor-feed-tid">${esc(kontorTid(h.ts))}</span><span>${esc(navn)} — ${esc(h.status||'')}${h.tekst?': '+esc(h.tekst):''}</span></div>`;
     }).join('') : '<div class="req-empty">Ingen hændelser endnu.</div>';
   }catch(e){$('kontorGrid').innerHTML='<div class="req-empty">Fejl ved hentning.</div>';}
