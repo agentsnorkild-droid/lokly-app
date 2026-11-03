@@ -127,6 +127,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .stat-card .stat-num{font-size:32px;font-weight:700;color:var(--cyan);line-height:1;margin-bottom:6px}
 .stat-card .stat-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
 .admin-section-header{display:flex;align-items:center;justify-content:space-between}
+.kontor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:4px}
+.kontor-rum{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.kontor-figur{width:30px;height:30px;border-radius:50%;background:var(--text2);flex-shrink:0}
+.kontor-figur.status-kører{background:var(--cyan);animation:kontorPuls 1.6s ease-in-out infinite}
+.kontor-figur.status-faerdig{background:var(--green)}
+.kontor-figur.status-fejl{background:var(--red);animation:kontorBlink 1s step-end infinite}
+.kontor-figur.status-venter{background:var(--orange)}
+.kontor-navn{font-size:13px;font-weight:600}
+.kontor-status{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.kontor-tid{font-size:11px;color:var(--text2)}
+@keyframes kontorPuls{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.75}}
+@keyframes kontorBlink{50%{opacity:.25}}
+.kontor-feed{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto}
+.kontor-feed-item{font-size:13px;padding:8px 10px;border-radius:8px;background:var(--surface2);display:flex;gap:8px;align-items:baseline}
+.kontor-feed-tid{color:var(--text2);font-variant-numeric:tabular-nums;flex-shrink:0}
 .admin-section-header h3{font-size:16px;font-weight:600}
 .btn-add{display:flex;align-items:center;gap:6px;padding:10px 16px;border-radius:10px;border:none;background:var(--cyan);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
 .btn-add:hover{opacity:.9}
@@ -411,6 +426,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       </div>
     </div>
 
+    <div class="tab-pane admin-pane" id="tabKontor">
+      <div class="admin-section-header"><h3>Kontor</h3><span style="font-size:12px;color:var(--text2)" id="kontorOpdateret"></span></div>
+      <p style="font-size:13px;color:var(--text2);margin-top:-4px">Rigtig Lokly-aktivitet, ikke en simulering — viser kun det der faktisk er logget.</p>
+      <div class="kontor-grid" id="kontorGrid"><div class="req-empty">Henter…</div></div>
+      <div class="req-form" style="margin-top:16px">
+        <h3>Seneste hændelser</h3>
+        <div class="kontor-feed" id="kontorFeed"><div class="req-empty">Henter…</div></div>
+      </div>
+    </div>
+
     <div class="tab-pane req-pane" id="tabDashboard">
       <div class="stats-row">
         <div style="display:none"><div class="stat-card"><div class="stat-num" id="ovOpen">—</div><div class="stat-label">Ændringer i gang</div></div>
@@ -491,6 +516,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
   <nav class="bottom-nav">
     <button id="navDashboard" hidden onclick="switchTab('Dashboard',this)"><span class="nav-icon">📊</span>Overblik</button>
     <button id="navAdmin" hidden onclick="switchTab('Admin',this)"><span class="nav-icon">📊</span>Dashboard</button>
+    <button id="navKontor" hidden onclick="switchTab('Kontor',this)"><span class="nav-icon">◍</span>Kontor</button>
     <button id="navRequests" hidden onclick="switchTab('Requests',this)"><span class="nav-icon">✉️</span>Ønsker<span class="nav-badge" id="reqBadge" hidden>0</span></button>
     <button class="active" id="navChat" onclick="switchTab('Chat',this)"><span class="nav-icon">💬</span>Chat</button>
     <button id="navDocs" hidden onclick="switchTab('Docs',this)"><span class="nav-icon">📄</span>Dokumenter</button>
@@ -627,7 +653,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261102-1108';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261103-1750';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=(location.hostname==='app.lokly.dk')?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -650,7 +676,10 @@ const filUrl=p=>{if(!API)return p;let t='';try{t=localStorage.getItem('lokly_ses
 if(API){const _f=window.fetch.bind(window);window.fetch=(u,o={})=>{if(typeof u==='string'&&u.startsWith('/api/')){u=API+u;o=Object.assign({credentials:'include'},o);let t='';try{t=localStorage.getItem('lokly_session')||'';}catch(e){}if(t){o.headers=Object.assign({},o.headers||{},{'X-Session':t});}}return _f(u,o);};}
 const $ = id => document.getElementById(id);
 let chatHistory = [], userData = {}, editingUsername = null;
-const tabMap = {Chat:'tabChat',Admin:'tabAdmin',Dashboard:'tabDashboard',Settings:'tabSettings',Requests:'tabRequests',Docs:'tabDocs'};
+const tabMap = {Chat:'tabChat',Admin:'tabAdmin',Kontor:'tabKontor',Dashboard:'tabDashboard',Settings:'tabSettings',Requests:'tabRequests',Docs:'tabDocs'};
+
+let kontorPollId=null;
+function stopKontorPoll(){if(kontorPollId){clearInterval(kontorPollId);kontorPollId=null;}}
 
 function switchTab(name, btn){document.body.classList.toggle('chat-open',name==='Chat');
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
@@ -662,6 +691,29 @@ function switchTab(name, btn){document.body.classList.toggle('chat-open',name===
   if(name==='Requests') loadRequests();
   if(name==='Dashboard') loadOverview();
   if(name==='Docs') loadDocs();
+  if(name==='Kontor'){loadKontorData();stopKontorPoll();kontorPollId=setInterval(loadKontorData,8000);}
+  else stopKontorPoll();
+}
+
+const KONTOR_LABELS={'lokly-plan-deploy':'Lokly Plan','lokly-mail-deploy':'Lokly Mail','lokly-app-deploy':'Lokly App','sps-support':'SPS-support','laase-synk':'Låse-synk'};
+const KONTOR_STATUS_TXT={'kører':'Kører','faerdig':'Færdig','fejl':'Fejl','venter':'Venter'};
+function kontorTid(ts){try{const d=new Date(ts);if(isNaN(d))return ts;return d.toLocaleString('da-DK',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return ts;}}
+async function loadKontorData(){
+  try{
+    const r=await fetch('/api/admin/kontor');
+    if(!r.ok){$('kontorGrid').innerHTML='<div class="req-empty">Kunne ikke hente.</div>';return;}
+    const d=await r.json();
+    const systemer=d.systemer||[], haendelser=d.haendelser||[];
+    $('kontorOpdateret').textContent='Opdateret '+new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+    $('kontorGrid').innerHTML = systemer.length ? systemer.map(s=>{
+      const navn=KONTOR_LABELS[s.system]||s.system, status=s.status||'', statusTxt=KONTOR_STATUS_TXT[status]||status;
+      return `<div class="kontor-rum"><div class="kontor-figur status-${esc(status)}"></div><div class="kontor-navn">${esc(navn)}</div><div class="kontor-status">${esc(statusTxt)}</div><div class="kontor-tid">${esc(kontorTid(s.ts))}</div></div>`;
+    }).join('') : '<div class="req-empty">Ingen aktivitet logget endnu.</div>';
+    $('kontorFeed').innerHTML = haendelser.length ? haendelser.map(h=>{
+      const navn=KONTOR_LABELS[h.system]||h.system;
+      return `<div class="kontor-feed-item"><span class="kontor-feed-tid">${esc(kontorTid(h.ts))}</span><span>${esc(navn)} — ${esc(h.status||'')}${h.tekst?': '+esc(h.tekst):''}</span></div>`;
+    }).join('') : '<div class="req-empty">Ingen hændelser endnu.</div>';
+  }catch(e){$('kontorGrid').innerHTML='<div class="req-empty">Fejl ved hentning.</div>';}
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -684,7 +736,7 @@ async function enterApp(data){
   $('loginScreen').style.display='none'; $('appScreen').style.display='flex';
   $('companyName').textContent=data.company;
   if(data.is_admin){
-    $('adminBadge').style.display=''; $('navAdmin').hidden=false; $('navChat').hidden=true;
+    $('adminBadge').style.display=''; $('navAdmin').hidden=false; $('navKontor').hidden=false; $('navChat').hidden=true;
     $('settingsReadOnly').style.display=''; $('settingsEditable').style.display='none';
     document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
@@ -741,12 +793,13 @@ setTimeout(tjekVersion, 4000);
 function setField(id,val){const el=$(id);if(val){el.textContent=val;el.classList.remove('empty');}else{el.textContent='Ikke angivet';el.classList.add('empty');}}
 
 async function doLogout(){
+  stopKontorPoll();
   await fetch('/api/logout',{method:'POST'}); try{localStorage.removeItem('lokly_session');}catch(e){}
   chatHistory=[]; userData={};
   $('messages').innerHTML='';
   $('appScreen').style.display='none'; $('loginScreen').style.display='flex';
   $('username').value=''; $('password').value='';
-  $('navChat').hidden=false; $('navAdmin').hidden=true; $('navDashboard').hidden=true; $('navRequests').hidden=true; $('navDocs').hidden=true; $('adminBadge').style.display='none'; $('headerActions').style.display='none';
+  $('navChat').hidden=false; $('navAdmin').hidden=true; $('navKontor').hidden=true; $('navDashboard').hidden=true; $('navRequests').hidden=true; $('navDocs').hidden=true; $('adminBadge').style.display='none'; $('headerActions').style.display='none';
   document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
   $('navChat').classList.add('active');
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
