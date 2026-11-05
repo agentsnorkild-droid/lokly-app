@@ -739,7 +739,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261105-1304';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261105-1306';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=['app.lokly.dk','lokly.dk','www.lokly.dk'].includes(location.hostname)?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -797,12 +797,23 @@ const KONTOR_DEPT_CLASS={'Udvikling':'kontor-dept-1','Support':'kontor-dept-2','
 // to bagkant-flader trukket op i z bliver de to synlige vægge (standard isometrisk cutaway).
 function kontorIso(x,y,z){return [(x-y),(x+y)/2-(z||0)];}
 const KONTOR_ZW=0.62; // vægshøjde i lokale enheder (brøkdel af rummets sidelængde S)
-// Faste ankerpunkter = gulvets bageste hjørne pr. afdeling, i SVG-enheder (viewBox 0 0 400 262).
-// Pentagon-opstilling om hub'en, samme rækkefølge/plads som runde 2 så rummet altid er
-// genkendeligt. S=rummets sidelængde, ens for alle rum undtagen hub'en (større, fælles log).
-const KONTOR_ROOM_ANCHOR={Marketing:{x:200,y:54},Salg:{x:305,y:96},Udvikling:{x:266,y:194},Drift:{x:134,y:194},Support:{x:95,y:96}};
+// Faste ankerpunkter = gulvets bageste hjørne pr. afdeling, i SVG-enheder (viewBox 0 0 440 296).
+// Pentagon-opstilling om hub'en (5 punkter på en ellipse, startende lige over hub'en, med
+// uret rundt) — radius er sat så rum-badges og hub-badge aldrig kan overlappe hinanden
+// (retter overlap set i runde 3's første skærmbillede, hvor hub-badgen dækkede Udvikling/
+// Drifts tal). S=rummets sidelængde, ens for alle rum undtagen hub'en (større, fælles log).
+const KONTOR_HUB=({x:220,y:150});
+const KONTOR_ROOM_ANCHOR=(()=>{
+  const cx=KONTOR_HUB.x, cy=KONTOR_HUB.y, rx=155, ry=102;
+  const navne=['Marketing','Salg','Udvikling','Drift','Support'];
+  const pos={};
+  navne.forEach((navn,i)=>{
+    const vinkel=(-90+i*72)*Math.PI/180;
+    pos[navn]={x:cx+Math.cos(vinkel)*rx, y:cy+Math.sin(vinkel)*ry};
+  });
+  return pos;
+})();
 const KONTOR_ROOM_S=42;
-const KONTOR_HUB=({x:200,y:150});
 function kontorTid(ts){try{const d=new Date(ts);if(isNaN(d))return ts;return d.toLocaleString('da-DK',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return ts;}}
 function kontorKort(t){t=String(t||'');return t.length>44?t.slice(0,43)+'…':t;}
 let kontorData={}, kontorAaben=null;
@@ -859,16 +870,16 @@ function renderKontorFlow(){
   }).join('');
 
   const totalIdag=kontorData.haendelser_i_dag||0;
-  const hS=70; // hub-plinten er den største "rombe" i midten
+  const hS=52; // hub-plinten er den største "rombe" i midten
   const hubGlowCy=KONTOR_HUB.y;
   const hub=`<g title="Hændelser i dag på tværs af alle afdelinger">
     <ellipse class="kontor-hub-plinth" cx="${KONTOR_HUB.x}" cy="${KONTOR_HUB.y+hS*0.22}" rx="${hS}" ry="${hS*0.5}"/>
     <ellipse class="kontor-hub-glow" cx="${KONTOR_HUB.x}" cy="${hubGlowCy}" rx="${hS*0.5}" ry="${hS*0.26}"/>
     <ellipse class="kontor-hub-ring" cx="${KONTOR_HUB.x}" cy="${hubGlowCy}" rx="${hS*0.72}" ry="${hS*0.37}"/>
     <g transform="translate(${KONTOR_HUB.x},${KONTOR_HUB.y-hS*0.08})">
-      <rect class="kontor-hub-badge-bg" x="-58" y="-30" width="116" height="60" rx="14"/>
-      <text class="kontor-hub-num" x="0" y="2" text-anchor="middle">${totalIdag}</text>
-      <text class="kontor-hub-lab" x="0" y="20" text-anchor="middle">HÆNDELSER I DAG</text>
+      <rect class="kontor-hub-badge-bg" x="-50" y="-27" width="100" height="54" rx="13"/>
+      <text class="kontor-hub-num" x="0" y="1" text-anchor="middle">${totalIdag}</text>
+      <text class="kontor-hub-lab" x="0" y="18" text-anchor="middle">HÆNDELSER I DAG</text>
     </g>
   </g>`;
 
@@ -883,7 +894,7 @@ function renderKontorFlow(){
   }
 
   $('kontorGrid').innerHTML=`<div class="kontor-office">
-    <svg class="kontor-svg" viewBox="0 0 400 262" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Kontor-overblik, ${totalIdag} hændelser i dag">
+    <svg class="kontor-svg" viewBox="0 0 440 296" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Kontor-overblik, ${totalIdag} hændelser i dag">
       ${linjer}
       ${rum}
       ${hub}
