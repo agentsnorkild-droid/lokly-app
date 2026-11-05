@@ -23,7 +23,7 @@
 :root{
   --bg:#f6f5f1;--surface:#ffffff;--surface2:#efede6;
   --cyan:#12564b;--cyan-dim:#12564b14;--cyan-mid:#12564b40;
-  --purple:#12564b;--green:#1f7a5c;--red:#b4432f;--orange:#b86a1f;
+  --purple:#12564b;--green:#1f7a5c;--red:#b4432f;--orange:#b86a1f;--blue:#3a5a8c;
   --text:#1a2b2a;--text2:#5f6b69;
   --radius:14px;--nav-h:64px;--border:#e4e0d6
 }
@@ -141,6 +141,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .kontor-dept-2{--dept:var(--green)}
 .kontor-dept-3{--dept:var(--orange)}
 .kontor-dept-4{--dept:var(--red)}
+.kontor-dept-5{--dept:var(--blue)}
 @keyframes kontorPuls{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.5}}
 @keyframes kontorBlink{50%{opacity:.25}}
 /* kontor: horisontalt pipeline-flow (Alex 4/11, erstatter rum-stilen fra 3/11) */
@@ -196,6 +197,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .kontor-feed{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto}
 .kontor-feed-item{font-size:13px;padding:8px 10px;border-radius:8px;background:var(--surface2);display:flex;gap:8px;align-items:baseline}
 .kontor-feed-tid{color:var(--text2);font-variant-numeric:tabular-nums;flex-shrink:0}
+.kontor-feed-afd{color:var(--text2);font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:1px 7px;flex-shrink:0}
+.kontor-kunde-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+.kontor-kunde-tab{font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0;font-weight:600}
+.kontor-kunde-tab.active{background:var(--cyan);color:#fff;border-color:var(--cyan)}
+.kontor-kunde-tab.internt{opacity:.7}
 @media (max-width:520px){.kontor-phase{min-width:200px}.kontor-node{width:176px}}
 .admin-section-header h3{font-size:16px;font-weight:600}
 .btn-add{display:flex;align-items:center;gap:6px;padding:10px 16px;border-radius:10px;border:none;background:var(--cyan);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
@@ -506,6 +512,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
       <p style="font-size:13px;color:var(--text2);margin-top:-4px">Rigtig Lokly-aktivitet, ikke en simulering — viser kun det der faktisk er logget.</p>
       <div id="kontorGrid"><div class="req-empty">Henter…</div></div>
       <div class="req-form" style="margin-top:16px">
+        <h3>Kunder</h3>
+        <p style="font-size:12px;color:var(--text2);margin-top:-4px;margin-bottom:8px">Samme hændelser som ovenfor, men samlet pr. kunde på tværs af afdelinger.</p>
+        <div class="kontor-kunde-tabs" id="kontorKunderTabs"></div>
+        <div class="kontor-feed" id="kontorKunderFeed"><div class="req-empty">Henter…</div></div>
+      </div>
+      <div class="req-form" style="margin-top:16px">
         <h3>Seneste hændelser</h3>
         <div class="kontor-feed" id="kontorFeed"><div class="req-empty">Henter…</div></div>
       </div>
@@ -728,7 +740,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261104-2257';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261105-1151';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=['app.lokly.dk','lokly.dk','www.lokly.dk'].includes(location.hostname)?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -772,15 +784,17 @@ function switchTab(name, btn){document.body.classList.toggle('chat-open',name===
 
 const KONTOR_LABELS={'lokly-plan-deploy':'Lokly Plan','lokly-mail-deploy':'Lokly Mail','lokly-app-deploy':'Lokly App','sps-support':'SPS-support','laase-synk':'Låse-synk'};
 const KONTOR_STATUS_TXT={'kører':'Kører','faerdig':'Færdig','fejl':'Fejl','venter':'Venter'};
-// Pipeline-rækkefølge Salg -> Udvikling -> Drift -> Support (leads ind, bygges, holdes i drift, support bagefter).
-// Farveidentitet pr. afdeling er fast (uafhængig af visningsorden), matcher den gamle rum-stil.
-const KONTOR_FLOW_ORDER=['Salg','Udvikling','Drift','Support'];
-const KONTOR_DEPT_CLASS={'Udvikling':'kontor-dept-1','Support':'kontor-dept-2','Drift':'kontor-dept-3','Salg':'kontor-dept-4'};
+// Pipeline-rækkefølge Marketing -> Salg -> Udvikling -> Drift -> Support (tiltrækker, lukker,
+// bygges, holdes i drift, support bagefter). Farveidentitet pr. afdeling er fast (uafhængig af
+// visningsorden), matcher den gamle rum-stil.
+const KONTOR_FLOW_ORDER=['Marketing','Salg','Udvikling','Drift','Support'];
+const KONTOR_DEPT_CLASS={'Udvikling':'kontor-dept-1','Support':'kontor-dept-2','Drift':'kontor-dept-3','Salg':'kontor-dept-4','Marketing':'kontor-dept-5'};
 const KONTOR_DEPT_ICON={
   'Salg':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>',
   'Udvikling':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M15 7l5 5-5 5"/></svg>',
   'Drift':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-14 5.3L4 16"/><path d="M4 20v-4h4"/></svg>',
   'Support':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  'Marketing':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16 9a3 3 0 0 1 0 6"/><path d="M19 6a6 6 0 0 1 0 12"/></svg>',
 };
 const KONTOR_CHECK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
 function kontorTid(ts){try{const d=new Date(ts);if(isNaN(d))return ts;return d.toLocaleString('da-DK',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return ts;}}
@@ -829,6 +843,23 @@ function renderKontorFlow(){
   const cycle=`<div class="kontor-cycle"><div class="kontor-cycle-label">${esc(sidste.navn)} → igen fra ${esc(foerste.navn)}</div></div>`;
   $('kontorGrid').innerHTML=`<div class="kontor-flow-outer"><div class="kontor-flow-track"><div class="kontor-flow-row">${faser}</div>${cycle}</div></div>`;
 }
+// Kunde-dimension: samme hændelser som afdelings-flowet, men samlet pr. kunde på tværs af
+// afdelinger. "Internt" er ikke en kunde, men Alex/Lokly-interne ting — vises sidst, nedtonet.
+let kontorKundeValgt=null;
+function valgKontorKunde(navn){kontorKundeValgt=navn; renderKontorKunder();}
+function renderKontorKunder(){
+  const kunder=kontorData.kunder||[];
+  if(!kunder.length){$('kontorKunderTabs').innerHTML='';$('kontorKunderFeed').innerHTML='<div class="req-empty">Ingen data endnu.</div>';return;}
+  if(!kontorKundeValgt || !kunder.some(k=>k.navn===kontorKundeValgt)) kontorKundeValgt=kunder[0].navn;
+  $('kontorKunderTabs').innerHTML = kunder.map(k=>
+    `<button class="kontor-kunde-tab${k.navn===kontorKundeValgt?' active':''}${k.navn==='Internt'?' internt':''}" onclick="valgKontorKunde('${esc(k.navn)}')">${esc(k.navn)} (${k.antal})</button>`
+  ).join('');
+  const valgt=kunder.find(k=>k.navn===kontorKundeValgt);
+  const h=(valgt&&valgt.haendelser)||[];
+  $('kontorKunderFeed').innerHTML = h.length ? h.map(e=>
+    `<div class="kontor-feed-item"><span class="kontor-feed-tid">${esc(kontorTid(e.ts))}</span><span class="kontor-feed-afd">${esc(e.afdeling||'')}</span><span>${esc(kontorNavn(e.system))} — ${esc(e.status||'')}${e.tekst?': '+esc(e.tekst):''}</span></div>`
+  ).join('') : `<div class="req-empty">Ingen hændelser for ${esc((valgt&&valgt.navn)||'')} endnu.</div>`;
+}
 async function loadKontorData(){
   try{
     const r=await fetch('/api/admin/kontor');
@@ -838,6 +869,7 @@ async function loadKontorData(){
     const haendelser=d.haendelser||[];
     $('kontorOpdateret').textContent='Opdateret '+new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
     renderKontorFlow();
+    renderKontorKunder();
     $('kontorFeed').innerHTML = haendelser.length ? haendelser.map(h=>{
       const navn=kontorNavn(h.system);
       return `<div class="kontor-feed-item"><span class="kontor-feed-tid">${esc(kontorTid(h.ts))}</span><span>${esc(navn)} — ${esc(h.status||'')}${h.tekst?': '+esc(h.tekst):''}</span></div>`;
