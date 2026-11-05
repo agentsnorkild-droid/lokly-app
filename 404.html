@@ -142,38 +142,45 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .kontor-dept-3{--dept:var(--orange)}
 .kontor-dept-4{--dept:var(--red)}
 .kontor-dept-5{--dept:var(--blue)}
-@keyframes kontorPuls{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.5}}
-@keyframes kontorBlink{50%{opacity:.25}}
-/* kontor: isometrisk kontor-overblik (Alex 5/11, erstatter flad pipeline-stil fra 4/11).
-   Rum placeres med % via inline --x/--y, så desktop (absolut, isometrisk diamant) og
-   mobil (statisk, lodret liste) deler samme markup/JS — kun CSS'en skifter layout. */
-.kontor-office{position:relative;background:#0b0f14;border-radius:18px;padding:22px 14px 30px}
-.kontor-office::before{content:"";position:absolute;inset:0;border-radius:18px;background-image:radial-gradient(circle,#ffffff14 1px,transparent 1.6px);background-size:20px 20px;pointer-events:none}
-.kontor-canvas{position:relative;width:100%;max-width:640px;margin:0 auto;aspect-ratio:16/12}
-.kontor-lines{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.kontor-lines line{stroke:var(--dept,#2a333c);stroke-width:.6;stroke-dasharray:2 2;opacity:.6}
-.kontor-hub{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:clamp(104px,17vw,156px);aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle at 50% 40%,#214a5c,#0b0f14 72%);border:1px solid #3a4e57;box-shadow:0 0 0 1px #ffffff12,0 0 40px -6px #3fd1ff55;z-index:2}
-.kontor-hub::before{content:"";position:absolute;inset:-18%;border-radius:50%;border:1px solid #3fd1ff33;animation:kontorRing 3.6s ease-in-out infinite}
-.kontor-hub::after{content:"";position:absolute;inset:-32%;border-radius:50%;border:1px solid #3fd1ff1c;animation:kontorRing 3.6s ease-in-out infinite .6s}
-@keyframes kontorRing{0%,100%{transform:scale(.94);opacity:.5}50%{transform:scale(1.04);opacity:1}}
-.kontor-hub-num{font-size:clamp(20px,3.6vw,30px);font-weight:700;color:#eafcff;line-height:1}
-.kontor-hub-lab{font-size:9.5px;color:#9fb6bd;margin-top:3px;line-height:1.3;max-width:88px}
-.kontor-room{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;width:clamp(92px,15vw,138px);z-index:3;cursor:pointer}
-.kontor-room-tile{--dept:var(--text2);position:relative;width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
-.kontor-room-glow{position:absolute;inset:6%;border-radius:22%;background:var(--dept);filter:blur(16px);opacity:0}
-.kontor-room.aktiv .kontor-room-glow{opacity:.55;animation:kontorPuls 2.2s ease-in-out infinite}
-.kontor-room-diamond{position:absolute;inset:0;transform:rotate(45deg);border-radius:22%;background:linear-gradient(135deg,color-mix(in srgb,var(--dept) 58%,#0b0f14),color-mix(in srgb,var(--dept) 20%,#0b0f14));border:1px solid color-mix(in srgb,var(--dept) 75%,#1c242b);box-shadow:inset 0 0 0 1px #ffffff14,0 14px 22px -10px color-mix(in srgb,var(--dept) 70%,transparent);transition:transform .2s}
-.kontor-room:hover .kontor-room-diamond{transform:rotate(45deg) scale(1.05)}
-.kontor-room-figure{width:52%;aspect-ratio:1;color:#e7f1f3;opacity:.92}
-.kontor-room-figure svg{width:100%;height:100%;display:block}
-.kontor-room-dot{position:absolute;top:2px;right:2px;width:11px;height:11px;border-radius:50%;background:var(--dept);box-shadow:0 0 0 2px #0b0f14;z-index:4}
-.kontor-room-dot.status-kører{animation:kontorPuls 1.6s ease-in-out infinite}
-.kontor-room-dot.status-fejl{animation:kontorBlink 1s step-end infinite}
-.kontor-room-dot.tom{background:#3a4149}
-.kontor-room-label{background:#11161dd9;border:1px solid color-mix(in srgb,var(--dept) 50%,#242b33);border-radius:10px;padding:5px 9px;text-align:center;line-height:1.25;min-width:100%}
-.kontor-room-navn{font-size:11.5px;font-weight:700;color:#f3f5f7;white-space:nowrap}
-.kontor-room-stat{font-size:9.5px;color:#9aa5ac;white-space:nowrap;margin-top:1px}
-.kontor-detalje{margin-top:16px;text-align:left;display:flex;flex-direction:column;gap:8px;background:#11161d;border:1px solid #242b33;border-radius:12px;padding:12px}
+@keyframes kontorPuls{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes kontorBlink{50%{opacity:.2}}
+/* kontor: RUNDE 3 (Alex 5/11-2026) — én håndtegnet isometrisk SVG, ægte gulv/væg-geometri
+   (beregnet i JS ud fra en fast 2:1-isometrisk projektion, tegnet som <polygon>, ingen
+   CSS-3D/transform-tricks). Mål: "overskueligt ved første øjekast" — ét tal pr. rum i en
+   opret, ikke-skæv badge; alt andet (systemer/hændelser) kommer kun frem ved klik.
+   Samme markup på alle bredder: viewBox+preserveAspectRatio skalerer ned til 360px uden
+   fast pixel-højde — det var den faste aspect-ratio/absolutte positionering der gav den
+   tomme sorte boks på mobil i runde 1/2, så her er der ingen af delene. */
+.kontor-office{position:relative;background:#0b0f14;border-radius:18px;padding:16px 10px 12px}
+.kontor-office::before{content:"";position:absolute;inset:0;border-radius:18px;background-image:radial-gradient(circle,#ffffff14 1px,transparent 1.6px);background-size:22px 22px;pointer-events:none}
+.kontor-svg{position:relative;display:block;width:100%;height:auto;max-width:760px;margin:0 auto}
+.kontor-link{stroke:var(--dept,#2a333c);stroke-width:.5;stroke-dasharray:2.5 3;opacity:.35}
+.kontor-room{cursor:pointer}
+.kontor-room.tom{opacity:.34}
+.kontor-room:hover,.kontor-room:focus-visible{opacity:1}
+.kontor-room:hover .kontor-room-floor,.kontor-room:focus-visible .kontor-room-floor{filter:brightness(1.15)}
+.kontor-room-hit{fill:transparent}
+.kontor-room-floor{fill:color-mix(in srgb,var(--dept) 72%,#0b0f14);transition:filter .15s}
+.kontor-room-wall-l{fill:color-mix(in srgb,var(--dept) 32%,#04060a)}
+.kontor-room-wall-r{fill:color-mix(in srgb,var(--dept) 46%,#04060a)}
+.kontor-room-desk{fill:#00000050}
+.kontor-room-monitor{fill:#ffffff40}
+.kontor-room-glow{fill:var(--dept);opacity:0;filter:blur(9px)}
+.kontor-room.aktiv .kontor-room-glow{opacity:.4;animation:kontorPuls 2.4s ease-in-out infinite}
+.kontor-badge-bg{fill:#11161dee;stroke:color-mix(in srgb,var(--dept) 55%,#242b33);stroke-width:1}
+.kontor-badge-num{font:800 20px -apple-system,Helvetica,Arial;fill:#f3f6f7}
+.kontor-room.tom .kontor-badge-num{fill:#7d868d}
+.kontor-badge-navn{font:700 9.5px -apple-system,Helvetica,Arial;fill:#aab3ba;letter-spacing:.02em}
+.kontor-badge-dot{fill:var(--dept)}
+.kontor-badge-dot.status-kører{animation:kontorPuls 1.6s ease-in-out infinite}
+.kontor-badge-dot.status-fejl{fill:var(--red);animation:kontorBlink 1s step-end infinite}
+.kontor-hub-plinth{fill:#162029;stroke:#2a3843;stroke-width:1}
+.kontor-hub-glow{fill:#3fd1ff;opacity:.5;filter:blur(15px)}
+.kontor-hub-ring{fill:none;stroke:#3fd1ff4d;stroke-width:1}
+.kontor-hub-badge-bg{fill:#0e141af0;stroke:#2d4a55;stroke-width:1.2}
+.kontor-hub-num{font:800 30px -apple-system,Helvetica,Arial;fill:#eafcff}
+.kontor-hub-lab{font:600 10.5px -apple-system,Helvetica,Arial;fill:#8fa6ad}
+.kontor-detalje{margin-top:14px;text-align:left;display:flex;flex-direction:column;gap:8px;background:#11161d;border:1px solid #242b33;border-radius:12px;padding:12px}
 .kontor-detalje-titel{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;color:#f3f5f7}
 .kontor-detalje-titel button{background:none;border:none;color:#8d98a1;font-size:18px;cursor:pointer;line-height:1;padding:2px 6px}
 .kontor-detalje-systemer{display:flex;flex-wrap:wrap;gap:6px}
@@ -181,27 +188,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .kontor-detalje .kontor-feed{max-height:220px}
 .kontor-detalje .kontor-feed-item{background:#1b222a;color:#cdd4da}
 .kontor-detalje .kontor-feed-tid{color:#7d8891}
-/* Mobil (<=720px): INGEN absolut positionering/horisontal scroll — ren lodret liste med
-   height:auto, så der aldrig kan opstå tomt/fastlåst rum. Dette retter den sorte tomme
-   boks-bug: den gamle .kontor-flow-outer brugte overflow-x:auto + min-width:max-content
-   i en flex-række inde i en 100dvh-flex-kolonne, et mønster der er kendt for at give
-   fejlberegnet/tomt scroll-areal på mobil Safari. Her er der intet at beregne forkert. */
-@media (max-width:720px){
-  .kontor-canvas{aspect-ratio:auto;max-width:none;display:flex;flex-direction:column;gap:10px}
-  .kontor-lines{display:none}
-  .kontor-hub{position:static;transform:none;width:100%;aspect-ratio:auto;flex-direction:row;justify-content:center;gap:10px;border-radius:14px;padding:12px}
-  .kontor-hub::before,.kontor-hub::after{display:none}
-  .kontor-hub-lab{max-width:none;margin-top:0}
-  .kontor-room{position:static;transform:none;flex-direction:row;width:100%;align-items:stretch;gap:0}
-  .kontor-room-tile{width:52px;aspect-ratio:1;flex-shrink:0}
-  .kontor-room-diamond{border-radius:12px;transform:none}
-  .kontor-room:hover .kontor-room-diamond{transform:none;filter:brightness(1.1)}
-  .kontor-room-glow{display:none}
-  .kontor-room-figure{width:60%}
-  .kontor-room-dot{top:-3px;right:-3px}
-  .kontor-room-label{flex:1;min-width:0;margin-left:10px;text-align:left;display:flex;flex-direction:column;justify-content:center;min-width:0}
-  .kontor-room-navn{white-space:normal}
-}
 .kontor-chip{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--surface2);color:var(--text2);display:inline-flex;align-items:center;gap:6px}
 .kontor-chip-dot{width:7px;height:7px;border-radius:50%;background:var(--text2);flex-shrink:0}
 .kontor-chip-dot.status-kører{background:var(--cyan);animation:kontorPuls 1.6s ease-in-out infinite}
@@ -753,7 +739,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-s
 </div>
 
 <script>
-const APP_V='20261105-1215';   // sættes af scripts/portal-deploy.sh ved hvert deploy
+const APP_V='20261105-1304';   // sættes af scripts/portal-deploy.sh ved hvert deploy
 const API=['app.lokly.dk','lokly.dk','www.lokly.dk'].includes(location.hostname)?'https://portal.snorkild.cc':'';
 const api=p=>API+p;
 // Dansk telefonnummer i en hændelsestekst -> ring-link. Gælder alle kunder og alle
@@ -799,89 +785,109 @@ const KONTOR_LABELS={'lokly-plan-deploy':'Lokly Plan','lokly-mail-deploy':'Lokly
 const KONTOR_STATUS_TXT={'kører':'Kører','faerdig':'Færdig','fejl':'Fejl','venter':'Venter'};
 // Pipeline-rækkefølge Marketing -> Salg -> Udvikling -> Drift -> Support (tiltrækker, lukker,
 // bygges, holdes i drift, support bagefter). Farveidentitet pr. afdeling er fast (uafhængig af
-// visningsorden), matcher den gamle rum-stil.
+// visningsorden).
 const KONTOR_FLOW_ORDER=['Marketing','Salg','Udvikling','Drift','Support'];
 const KONTOR_DEPT_CLASS={'Udvikling':'kontor-dept-1','Support':'kontor-dept-2','Drift':'kontor-dept-3','Salg':'kontor-dept-4','Marketing':'kontor-dept-5'};
-const KONTOR_DEPT_ICON={
-  'Salg':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>',
-  'Udvikling':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M15 7l5 5-5 5"/></svg>',
-  'Drift':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-14 5.3L4 16"/><path d="M4 20v-4h4"/></svg>',
-  'Support':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-  'Marketing':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16 9a3 3 0 0 1 0 6"/><path d="M19 6a6 6 0 0 1 0 12"/></svg>',
-};
-const KONTOR_CHECK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
-// Isometrisk kontor (Alex 5/11): 5 afdelinger som "rum" i en blomsterform om en central
-// hub (den fælles log, aktivitet.jsonl). Positioner er faste pr. afdelingsnavn (ikke
-// rækkefølge), så et rum altid sidder samme sted uanset status. Koordinater er % af
-// kontor-canvas'et og genbruges 1:1 som SVG-koordinater (viewBox 0 0 100 100) til
-// forbindelseslinjerne ind til hub'en, så de altid rammer rummets centrum præcist.
-const KONTOR_ROOM_POS={Marketing:{x:50,y:14},Salg:{x:85,y:36},Udvikling:{x:70,y:78},Drift:{x:30,y:78},Support:{x:15,y:36}};
-const KONTOR_HUB_POS={x:50,y:48};
-// Én fælles "figur ved skrivebord"-silhuet (ingen emoji/foto) — geometrisk: skrivebord,
-// skærm, hoved og krop set bagfra. Farven arves fra rummets --dept via currentColor.
-const KONTOR_FIGURE_SVG='<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
-  +'<rect x="5" y="30" width="38" height="3.5" rx="1.75" fill="currentColor" opacity=".5"/>'
-  +'<rect x="18" y="17" width="13" height="9" rx="1.5" fill="currentColor" opacity=".35"/>'
-  +'<rect x="22.5" y="26" width="3" height="4" fill="currentColor" opacity=".35"/>'
-  +'<circle cx="24" cy="9.5" r="5.2" fill="currentColor"/>'
-  +'<path d="M14.5 30c0-7.5 4.3-12.3 9.5-12.3S33.5 22.5 33.5 30Z" fill="currentColor"/>'
-  +'</svg>';
+// RUNDE 3 (Alex 5/11-2026, "det skal være mere overskueligt"): én håndtegnet isometrisk
+// SVG af hele kontoret i stedet for runde 2's roterede diamant-firkanter. Geometrien er
+// ægte — beregnet her i JS ud fra en fast 2:1-dimetrisk projektion og tegnet som rigtige
+// <polygon>-gulve/vægge — ikke CSS-transform på divs. Al tekst (tal/navn) sidder i en
+// opret, ikke-skæv badge oven på rummet, så det kan skimmes på under 2 sekunder.
+// dx=(x-y), dy=(x+y)/2-z — et lokalt enheds-kvadrat (0..1,0..1,z=0) bliver gulvets rombe;
+// to bagkant-flader trukket op i z bliver de to synlige vægge (standard isometrisk cutaway).
+function kontorIso(x,y,z){return [(x-y),(x+y)/2-(z||0)];}
+const KONTOR_ZW=0.62; // vægshøjde i lokale enheder (brøkdel af rummets sidelængde S)
+// Faste ankerpunkter = gulvets bageste hjørne pr. afdeling, i SVG-enheder (viewBox 0 0 400 262).
+// Pentagon-opstilling om hub'en, samme rækkefølge/plads som runde 2 så rummet altid er
+// genkendeligt. S=rummets sidelængde, ens for alle rum undtagen hub'en (større, fælles log).
+const KONTOR_ROOM_ANCHOR={Marketing:{x:200,y:54},Salg:{x:305,y:96},Udvikling:{x:266,y:194},Drift:{x:134,y:194},Support:{x:95,y:96}};
+const KONTOR_ROOM_S=42;
+const KONTOR_HUB=({x:200,y:150});
 function kontorTid(ts){try{const d=new Date(ts);if(isNaN(d))return ts;return d.toLocaleString('da-DK',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return ts;}}
 function kontorKort(t){t=String(t||'');return t.length>44?t.slice(0,43)+'…':t;}
 let kontorData={}, kontorAaben=null;
 function kontorNavn(sys){return KONTOR_LABELS[sys]||sys;}
 function toggleKontorRum(navn){kontorAaben=(kontorAaben===navn)?null:navn; renderKontorFlow();}
+
+// Tegner ét rum: gulv + to vægge (ægte iso-geometri) + et minimalt skrivebord/skærm-ikon
+// (ingen foto/emoji) + en opret talbadge. n = hændelser i dag for DENNE afdeling (ikke
+// "nogensinde") — det er tallet Alex skal kunne læse på afstand, så "tom i dag" rammer
+// rigtigt selvom afdelingen havde aktivitet tidligere.
+function kontorRumSvg(a){
+  const anker=KONTOR_ROOM_ANCHOR[a.navn]; if(!anker) return '';
+  const S=KONTOR_ROOM_S, ax=anker.x, ay=anker.y;
+  const deptKlasse=KONTOR_DEPT_CLASS[a.navn]||'';
+  const n=a.haendelser_i_dag||0, tom=n===0;
+  const status=tom?'':(a.status||'');
+  const aktiv=!tom&&status==='kører';
+  const pt=(x,y,z)=>{const d=kontorIso(x,y,z);return `${(ax+d[0]*S).toFixed(1)},${(ay+d[1]*S).toFixed(1)}`;};
+  const floor=`${pt(0,0,0)} ${pt(1,0,0)} ${pt(1,1,0)} ${pt(0,1,0)}`;
+  const wallL=`${pt(0,0,0)} ${pt(0,1,0)} ${pt(0,1,KONTOR_ZW)} ${pt(0,0,KONTOR_ZW)}`;
+  const wallR=`${pt(0,0,0)} ${pt(1,0,0)} ${pt(1,0,KONTOR_ZW)} ${pt(0,0,KONTOR_ZW)}`;
+  const desk=`${pt(.3,.5,0)} ${pt(.68,.5,0)} ${pt(.68,.76,0)} ${pt(.3,.76,0)}`;
+  const mon=`${pt(.42,.5,0)} ${pt(.58,.5,0)} ${pt(.58,.5,.3)} ${pt(.42,.5,.3)}`;
+  const glowCy=ay+S*0.38;
+  const badgeY=ay-KONTOR_ZW*S*0.5;
+  const navnKort=a.navn.toUpperCase();
+  const bw=Math.max(68,navnKort.length*7.6+20), bh=40;
+  const dot=status?`<circle class="kontor-badge-dot status-${esc(status)}" cx="${bw/2-13}" cy="-13" r="4"/>`:'';
+  return `<g class="kontor-room ${deptKlasse}${aktiv?' aktiv':''}${tom?' tom':''}" tabindex="0" role="button" aria-label="${esc(a.navn)}, ${n} hændelser i dag" onclick="toggleKontorRum('${esc(a.navn)}')" onkeydown="if(event.key==='Enter'){toggleKontorRum('${esc(a.navn)}')}">
+    <ellipse class="kontor-room-glow" cx="${ax}" cy="${glowCy}" rx="${S*0.58}" ry="${S*0.3}"/>
+    <polygon class="kontor-room-wall-l" points="${wallL}"/>
+    <polygon class="kontor-room-wall-r" points="${wallR}"/>
+    <polygon class="kontor-room-floor" points="${floor}"/>
+    <polygon class="kontor-room-desk" points="${desk}"/>
+    <polygon class="kontor-room-monitor" points="${mon}"/>
+    <rect class="kontor-room-hit" x="${ax-S*1.05}" y="${ay-KONTOR_ZW*S-16}" width="${S*2.1}" height="${S*1.1+KONTOR_ZW*S+16}"/>
+    <g transform="translate(${ax},${badgeY})">
+      <rect class="kontor-badge-bg" x="${-bw/2}" y="-24" width="${bw}" height="${bh}" rx="11"/>
+      ${dot}
+      <text class="kontor-badge-num" x="0" y="-3" text-anchor="middle">${n}</text>
+      <text class="kontor-badge-navn" x="0" y="12" text-anchor="middle">${esc(navnKort)}</text>
+    </g>
+  </g>`;
+}
+
 function renderKontorFlow(){
   const raw=kontorData.afdelinger||[];
   const afdelinger=KONTOR_FLOW_ORDER.map(navn=>raw.find(a=>a.navn===navn)).filter(Boolean);
   if(!afdelinger.length){$('kontorGrid').innerHTML='<div class="req-empty">Ingen data endnu.</div>';return;}
 
   const linjer=afdelinger.map(a=>{
-    const pos=KONTOR_ROOM_POS[a.navn]; if(!pos)return '';
-    return `<line class="${KONTOR_DEPT_CLASS[a.navn]||''}" x1="${KONTOR_HUB_POS.x}" y1="${KONTOR_HUB_POS.y}" x2="${pos.x}" y2="${pos.y}"/>`;
+    const anker=KONTOR_ROOM_ANCHOR[a.navn]; if(!anker)return '';
+    return `<line class="kontor-link ${KONTOR_DEPT_CLASS[a.navn]||''}" x1="${KONTOR_HUB.x}" y1="${KONTOR_HUB.y}" x2="${anker.x}" y2="${anker.y+KONTOR_ROOM_S*0.5}"/>`;
   }).join('');
 
   const totalIdag=kontorData.haendelser_i_dag||0;
-  const hub=`<div class="kontor-hub" title="Fælles log for alle afdelinger (aktivitet.jsonl)">
-    <div class="kontor-hub-num">${totalIdag}</div>
-    <div class="kontor-hub-lab">hændelser i dag · fælles log</div>
-  </div>`;
+  const hS=70; // hub-plinten er den største "rombe" i midten
+  const hubGlowCy=KONTOR_HUB.y;
+  const hub=`<g title="Hændelser i dag på tværs af alle afdelinger">
+    <ellipse class="kontor-hub-plinth" cx="${KONTOR_HUB.x}" cy="${KONTOR_HUB.y+hS*0.22}" rx="${hS}" ry="${hS*0.5}"/>
+    <ellipse class="kontor-hub-glow" cx="${KONTOR_HUB.x}" cy="${hubGlowCy}" rx="${hS*0.5}" ry="${hS*0.26}"/>
+    <ellipse class="kontor-hub-ring" cx="${KONTOR_HUB.x}" cy="${hubGlowCy}" rx="${hS*0.72}" ry="${hS*0.37}"/>
+    <g transform="translate(${KONTOR_HUB.x},${KONTOR_HUB.y-hS*0.08})">
+      <rect class="kontor-hub-badge-bg" x="-58" y="-30" width="116" height="60" rx="14"/>
+      <text class="kontor-hub-num" x="0" y="2" text-anchor="middle">${totalIdag}</text>
+      <text class="kontor-hub-lab" x="0" y="20" text-anchor="middle">HÆNDELSER I DAG</text>
+    </g>
+  </g>`;
 
-  const rum=afdelinger.map(a=>{
-    const pos=KONTOR_ROOM_POS[a.navn]||{x:50,y:50};
-    const status=a.status||'', tom=!status;
-    const koerer=a.systemer.filter(s=>s.status==='kører').length;
-    const faerdig=a.systemer.filter(s=>s.status==='faerdig').length;
-    const venter=a.systemer.filter(s=>s.status==='venter').length;
-    const statLinje=tom?'Ingen aktivitet i dag':`${koerer} kører · ${faerdig} færdig${venter?` · ${venter} venter`:''}`;
-    return `<div class="kontor-room ${KONTOR_DEPT_CLASS[a.navn]||''}${status==='kører'?' aktiv':''}" style="--x:${pos.x}%;--y:${pos.y}%" onclick="toggleKontorRum('${esc(a.navn)}')">
-      <div class="kontor-room-tile">
-        <div class="kontor-room-glow"></div>
-        <div class="kontor-room-diamond"></div>
-        <div class="kontor-room-figure">${KONTOR_FIGURE_SVG}</div>
-        <span class="kontor-room-dot status-${esc(status)} ${tom?'tom':''}"></span>
-      </div>
-      <div class="kontor-room-label">
-        <div class="kontor-room-navn">${esc(a.navn)}</div>
-        <div class="kontor-room-stat">${esc(statLinje)}</div>
-      </div>
-    </div>`;
-  }).join('');
+  const rum=afdelinger.map(kontorRumSvg).join('');
 
   let detalje='';
   const aabenAfd=afdelinger.find(a=>a.navn===kontorAaben);
   if(aabenAfd){
     const chips=aabenAfd.systemer.length ? aabenAfd.systemer.map(s=>`<span class="kontor-chip"><span class="kontor-chip-dot status-${esc(s.status||'')}"></span>${esc(kontorNavn(s.system))} — ${esc(KONTOR_STATUS_TXT[s.status]||s.status||'')}</span>`).join('') : '<span class="kontor-chip">Ingen systemer endnu</span>';
     const feed=aabenAfd.haendelser.length ? aabenAfd.haendelser.map(h=>`<div class="kontor-feed-item"><span class="kontor-feed-tid">${esc(kontorTid(h.ts))}</span><span>${esc(kontorNavn(h.system))} — ${esc(h.status||'')}${h.tekst?': '+esc(h.tekst):''}</span></div>`).join('') : '<div class="req-empty">Ingen hændelser i denne afdeling endnu.</div>';
-    detalje=`<div class="kontor-detalje"><div class="kontor-detalje-titel"><span>${esc(aabenAfd.navn)}</span><button onclick="toggleKontorRum('${esc(aabenAfd.navn)}')" aria-label="Luk">×</button></div><div class="kontor-detalje-systemer">${chips}</div><div class="kontor-feed">${feed}</div></div>`;
+    detalje=`<div class="kontor-detalje"><div class="kontor-detalje-titel"><span>${esc(aabenAfd.navn)} · ${aabenAfd.haendelser_i_dag||0} i dag</span><button onclick="toggleKontorRum('${esc(aabenAfd.navn)}')" aria-label="Luk">×</button></div><div class="kontor-detalje-systemer">${chips}</div><div class="kontor-feed">${feed}</div></div>`;
   }
 
   $('kontorGrid').innerHTML=`<div class="kontor-office">
-    <div class="kontor-canvas">
-      <svg class="kontor-lines" viewBox="0 0 100 100" preserveAspectRatio="none">${linjer}</svg>
-      ${hub}
+    <svg class="kontor-svg" viewBox="0 0 400 262" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Kontor-overblik, ${totalIdag} hændelser i dag">
+      ${linjer}
       ${rum}
-    </div>
+      ${hub}
+    </svg>
     ${detalje}
   </div>`;
 }
